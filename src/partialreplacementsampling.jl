@@ -112,7 +112,7 @@ function partialReplacementSampling(value1::AbstractVector, value2::AbstractVect
   t = -quantile(TDist(m + v - 2), (1 - α) / 2)
   absoluteerror = t * sx̅
   relativeerror = absoluteerror / ysprq * 100
-  hectarevalue = ysprq / plot_area
+  hectarevalue = ysprq / uconvert(referencearea(plot_area), plot_area)
   totalvalue = ysprq * N
 
   occasion2 = DataFrame(

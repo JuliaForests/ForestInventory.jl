@@ -24,12 +24,13 @@ Pkg.add("ForestInventory")
 
 Every design takes plain vectors and never assumes a unit for the sampled quantity
 itself: give it `u"m^3"`, `u"m^2/ha"`, a plain tree count, whatever it actually is, and
-that's exactly what comes back out. Only `plot_area`/`total_area` default to hectares
-when given as bare numbers, matching the rest of the `JuliaForests` ecosystem.
+that's exactly what comes back out. `plot_area`/`total_area` take any `Unitful` area
+(`ha`, `acre`, `m^2`, ...) and default to hectares when given as bare numbers, matching
+the rest of the `JuliaForests` ecosystem.
 
 Estimate a stand total from a simple random sample of plots — the reference design every
-other method in the package is compared against. The 70 plot volumes below (0.1 ha plots,
-45 ha stand) come from Nardini's own simple-random-sampling exercise (see [About the
+other method in the package is compared against. The 70 plot volumes below (1000 m² plots,
+a 45 ha stand) come from Nardini's own simple-random-sampling exercise (see [About the
 Authors](https://JuliaForests.github.io/ForestInventory.jl/dev/forestinventory/#About-the-Authors)) —
 this reproduces its published mean/total (217.97 m³/ha, 9808.71 m³) exactly:
 
@@ -44,7 +45,7 @@ v = [
     9.9, 30.7, 29.2, 28.0, 13.7, 27.6, 37.9, 27.3, 28.0, 30.7,
 ]u"m^3"
 
-simpleCasualSampling(v, 0.1, 45; e=10, α=0.95)
+simpleCasualSampling(v, 1000u"m^2", 45u"ha")
 ```
 
 See the [tutorial](https://JuliaForests.github.io/ForestInventory.jl/dev/tutorial/) for

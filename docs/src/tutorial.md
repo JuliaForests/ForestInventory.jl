@@ -2,11 +2,11 @@
 
 Estimate a stand's total — with its confidence interval, coefficient of variation, and
 required sample size — from any of the 11 classic sampling designs, each its own function
-taking plain vectors. Every design accepts plain numbers for `plot_area`/`total_area`
-(assumed to be `ha`), but never assumes a unit for the sampled quantity itself (usually
-named `value`): it might be volume, basal area, a tree count, or anything else, so a
-`Unitful` quantity is preserved as given and a plain number stays unitless all the way
-through. Designs that produce a single table return a plain `DataFrame`; designs that
+taking plain vectors. Every design accepts `plot_area`/`total_area` as a `Unitful` area
+(`ha`, `acre`, `m^2`, ...) or, for either one given as a plain number, assumes it to be
+`ha`. This never extends to the sampled quantity itself (usually named `value`): it might
+be volume, basal area, a tree count, or anything else, so a `Unitful` quantity is preserved
+as given and a plain number stays unitless all the way through. Designs that produce a single table return a plain `DataFrame`; designs that
 produce several related tables (one per stratum/cluster, or one per inventory occasion)
 return a [`SamplingReport`](@ref), whose tables are reachable through accessor functions
 (`resultTable(report)`, `clusterTable(report)`, ...) or directly as properties
@@ -35,11 +35,11 @@ more elaborate design here is measured against for how much variance reduction i
 structure actually buys.
 
 Give it a vector of the sampled quantity (`value` — volume, basal area, tree count, or
-anything else), the average plot area, and the number of measured plots. The optional
-keyword arguments `e` (desired relative sampling error, %) and `α` (confidence level) drive
-the required-sample-size calculation reported alongside the estimate.
+anything else), the average plot area, and the total area. The optional keyword arguments
+`e` (desired relative sampling error, %) and `α` (confidence level) drive the
+required-sample-size calculation reported alongside the estimate.
 
-The 70 plot volumes below (0.1 ha plots, 45 ha stand) come from Nardini's own
+The 70 plot volumes below (1000 m² plots, a 45 ha stand) come from Nardini's own
 simple-random-sampling exercise — our `mean`/`total` reproduce the dissertation's
 published 217.97 m³/ha and 9808.71 m³ exactly:
 
@@ -54,12 +54,18 @@ v = [
     9.9, 30.7, 29.2, 28.0, 13.7, 27.6, 37.9, 27.3, 28.0, 30.7,
 ]u"m^3"
 
-simpleCasualSampling(v, 0.1, 45; e=10, α=0.95)
+simpleCasualSampling(v, 1000u"m^2", 45u"ha")
 ```
 
 The result reports, among other statistics, the sample mean, its standard error and
 confidence interval, the population total estimate, and how many additional plots would be
-needed to reach the target relative error `e` at confidence level `α`.
+needed to reach the target relative error `e` at confidence level `α`. Tightening `e` to 5%
+raises `requiredSampleSize` accordingly — same data, `plot_area`/`total_area` now given as
+plain numbers, which is equivalent to the call above:
+
+```@example inv_simple
+simpleCasualSampling(v, 0.1, 45; e=5)
+```
 
 ## Stratified Random Sampling
 

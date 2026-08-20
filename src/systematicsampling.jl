@@ -93,7 +93,7 @@ function systematicSampling(value::AbstractVector, plot_area::Area, total_area::
 
   absoluteerror = Ttab * sx̅
   relativeerror = absoluteerror / x̅ * 100
-  hectarevalue = x̅ / plot_area
+  hectarevalue = x̅ / uconvert(referencearea(plot_area), plot_area)
   totalvalue = x̅ * N
   ciupper = totalvalue + N * absoluteerror
   cilower = totalvalue - N * absoluteerror

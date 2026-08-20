@@ -119,7 +119,7 @@ function clusterSampling(cluster::AbstractVector, value::AbstractVector, plot_ar
   sx̅ = sqrt(variance.meanvar) * vunit
   absoluteerror = Ttab * sx̅
   relativeerror = absoluteerror / x̅ * 100
-  hectarevalue = x̅ / plot_area
+  hectarevalue = x̅ / uconvert(referencearea(plot_area), plot_area)
   totalvalue = x̅ * M * N
   ciupper = totalvalue + M * N * absoluteerror
   cilower = totalvalue - M * N * absoluteerror

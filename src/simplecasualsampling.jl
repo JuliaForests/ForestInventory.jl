@@ -1,7 +1,7 @@
 # A plot occupying a full reference area (1 ha in the metric system, 1 ac in the
 # imperial one) is treated as effectively infinite regardless of the sampling fraction,
 # matching the convention used by the original tool this design was ported from.
-_isreferencearea(a::Area) = a == 1u"ha" || a == 1u"ac"
+_isreferencearea(a::Area) = a == 1 * referencearea(a)
 
 """
     simpleCasualSampling(value::AbstractVector, plot_area::Area, total_area::Area; e::Real=10, α::Real=0.95)
@@ -117,7 +117,7 @@ function simpleCasualSampling(value::AbstractVector, plot_area::Area, total_area
 
   absoluteerror = Ttab * sx̅
   relativeerror = absoluteerror / x̅ * 100
-  hectarevalue = x̅ / plot_area
+  hectarevalue = x̅ / uconvert(referencearea(plot_area), plot_area)
   totalvalue = x̅ * N
   ciupper = totalvalue + N * absoluteerror
   cilower = totalvalue - N * absoluteerror

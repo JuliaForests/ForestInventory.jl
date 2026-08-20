@@ -108,7 +108,7 @@ function twoStageSampling(primary::AbstractVector, value::AbstractVector, plot_a
   sx̅ = sqrt(variance.meanvar) * vunit
   absoluteerror = Ttab * sx̅
   relativeerror = absoluteerror / x̅ * 100
-  hectarevalue = x̅ / plot_area
+  hectarevalue = x̅ / uconvert(referencearea(plot_area), plot_area)
   totalvalue = x̅ * N * M
   ciupper = totalvalue + N * M * absoluteerror
   cilower = totalvalue - N * M * absoluteerror

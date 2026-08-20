@@ -91,7 +91,7 @@ function doubleSampling(value1::AbstractVector, value2::AbstractVector, plot_are
   t = -quantile(TDist(m - 1), (1 - α) / 2)
   absoluteerror = t * sx̅
   relativeerror = absoluteerror / yregq * 100
-  hectarevalue = yregq / plot_area
+  hectarevalue = yregq / uconvert(referencearea(plot_area), plot_area)
   totalvalue = yregq * N
 
   occasion2 = DataFrame(

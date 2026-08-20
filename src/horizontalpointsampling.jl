@@ -127,7 +127,7 @@ function horizontalPointSampling(point::AbstractVector, diameter::AbstractVector
     throw(DimensionMismatch("point, diameter, and value must have the same length."))
   baf > 0 || throw(ArgumentError("baf must be a positive value."))
 
-  d = _asdiameter(diameter)
+  d = withunit(diameter, DUNIT)
   g = basalarea.(d)
   bafunit = unit(g[1]) / referencearea(unit(d[1]))
   bafQ = baf * bafunit

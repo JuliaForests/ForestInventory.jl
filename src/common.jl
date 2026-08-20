@@ -2,15 +2,6 @@
 # exported; each public function calls into them with the specific quantities its own
 # variance formula produces.
 
-# Normalizes a diameter vector to a `Len` vector regardless of whether it already carries
-# units -- used only by `horizontalPointSampling`, the one design that works from
-# individual-tree data. Unlike the sampled `value` vector, diameter is structurally always
-# a diameter, so it keeps this package's usual "plain numbers default to cm" behavior.
-_asdiameter(d::AbstractVector{<:Len}) = d
-_asdiameter(d::AbstractVector{<:Real}) = d .* DUNIT
-_asdiameter(d::AbstractVector{<:Union{Missing,Len}}) = d
-_asdiameter(d::AbstractVector{<:Union{Missing,Real}}) = [ismissing(x) ? missing : x * DUNIT for x in d]
-
 # Required sample size for an infinite population, given a t-value, a *squared*
 # variance-like term (`varterm`, e.g. `cv^2` or a variance in volume² units -- not `cv` or
 # a standard deviation) and an admissible error (`e`) on the matching linear scale (both
@@ -104,7 +95,10 @@ function _occasiontable(stats::NamedTuple, N::Real, plot_area::Area, α::Real)
   abserr = t * se
   relerr = abserr / stats.x̅ * 100
   total = stats.x̅ * N
-  perhectare = stats.x̅ / plot_area
+  # convert plot_area to its reference area (ha/ac) before dividing: dividing straight by
+  # a bare m^2 quantity would let Unitful silently cancel same-base powers (m^3/m^2 ->
+  # m^1) instead of keeping the m^3/ha shape callers expect.
+  perhectare = stats.x̅ / uconvert(referencearea(plot_area), plot_area)
   return DataFrame(
     mean=stats.x̅, standardError=se, absoluteError=abserr, relativeError=round(relerr, digits=2),
     meanPerHectare=perhectare, total=total, lowerLimit=total - N * abserr, upperLimit=total + N * abserr,
