@@ -2,18 +2,10 @@
 # exported; each public function calls into them with the specific quantities its own
 # variance formula produces.
 
-# Normalizes a DataFrame column to a `Vol` vector regardless of whether it already
-# carries units: used by every grouped (Symbol + DataFrame) sampling design, since a
-# column's element type isn't known until the DataFrame is indexed at runtime, unlike a
-# directly-dispatched `AbstractVector` argument.
-_asvolume(v::AbstractVector{<:Vol}) = v
-_asvolume(v::AbstractVector{<:Real}) = v .* VUNIT
-_asvolume(v::AbstractVector{<:Union{Missing,Vol}}) = v
-_asvolume(v::AbstractVector{<:Union{Missing,Real}}) = [ismissing(x) ? missing : x * VUNIT for x in v]
-
-# Same normalization as `_asvolume`, for diameter columns -- used by
-# `HorizontalPointSampling`, the only design in this submodule that works from
-# individual-tree data rather than pre-aggregated plot volumes.
+# Normalizes a diameter vector to a `Len` vector regardless of whether it already carries
+# units -- used only by `horizontalPointSampling`, the one design that works from
+# individual-tree data. Unlike the sampled `value` vector, diameter is structurally always
+# a diameter, so it keeps this package's usual "plain numbers default to cm" behavior.
 _asdiameter(d::AbstractVector{<:Len}) = d
 _asdiameter(d::AbstractVector{<:Real}) = d .* DUNIT
 _asdiameter(d::AbstractVector{<:Union{Missing,Len}}) = d
@@ -27,7 +19,7 @@ _infinitesamplesize(t::Real, varterm::Real, e::Real) = (t^2 * varterm) / e^2
 
 # Required sample size for a finite population of size N, on the same scale as above.
 # `correctionvarterm` lets the finite-population correction term use a different
-# variance-like quantity than the numerator -- needed by `TwoStageSampling`, where the
+# variance-like quantity than the numerator -- needed by `twoStageSampling`, where the
 # correction reflects the population size of secondary units while the numerator reflects
 # how many were actually measured; it defaults to `varterm` for every other design, where
 # the two coincide.
@@ -94,29 +86,28 @@ end
 # Simple-random-sampling point estimate and variance of the mean for one occasion of a
 # successive-occasions design (independent/complete-replacement/partial-replacement/
 # double sampling), reused instead of recomputing it for every occasion in every design.
-function _occasionmean(vol::AbstractVector{<:Vol}, N::Real)
-  n = length(vol)
-  x̅ = mean(vol)
-  s² = var(vol)
+function _occasionmean(value::AbstractVector, N::Real)
+  n = length(value)
+  x̅ = mean(value)
+  s² = var(value)
   meanvar = (s² / n) * (1 - n / N)
   return (; n, x̅, s², meanvar)
 end
 
-# Builds one occasion's result table (mean, standard error, confidence interval, total
-# volume) as a single-row wide `DataFrame`, shared by every successive-occasions design
-# below. Column names are short, ASCII, and unit-homogeneous per column -- exactly the
-# shape `removeunits`/`restoreunits` (ForestFoundations.jl) expect, and the same
-# convention as `dmetrics`/`standmetrics` elsewhere in this package.
+# Builds one occasion's result table (mean, standard error, confidence interval, total)
+# as a single-row wide `DataFrame`, shared by every successive-occasions design below.
+# Column names are full words and unit-homogeneous per column -- exactly the shape
+# `removeunits`/`restoreunits` (ForestFoundations.jl) expect.
 function _occasiontable(stats::NamedTuple, N::Real, plot_area::Area, α::Real)
   t = -quantile(TDist(stats.n - 1), (1 - α) / 2)
   se = sqrt(stats.meanvar)
   abserr = t * se
   relerr = abserr / stats.x̅ * 100
-  vtotal = stats.x̅ * N
-  vha = stats.x̅ / plot_area
+  total = stats.x̅ * N
+  perhectare = stats.x̅ / plot_area
   return DataFrame(
-    vm=stats.x̅, se=se, abserr=abserr, relerr=round(relerr, digits=2), vha=vha,
-    vtotal=vtotal, cilower=vtotal - N * abserr, ciupper=vtotal + N * abserr,
+    mean=stats.x̅, standardError=se, absoluteError=abserr, relativeError=round(relerr, digits=2),
+    meanPerHectare=perhectare, total=total, lowerLimit=total - N * abserr, upperLimit=total + N * abserr,
     n=stats.n, N=N,
   )
 end
@@ -124,15 +115,15 @@ end
 # Builds the change-between-occasions result table (mean growth, standard error,
 # confidence interval, total growth) as a single-row wide `DataFrame`, shared by every
 # successive-occasions design below.
-function _changetable(growth::Vol, growthvar::Real, df::Real, N::Real, α::Real)
+function _changetable(growth, growthvar::Real, df::Real, N::Real, α::Real)
   t = -quantile(TDist(df), (1 - α) / 2)
   se = sqrt(growthvar) * unit(growth)
   abserr = t * se
   relerr = abserr / growth * 100
-  gtotal = growth * N
+  total = growth * N
   return DataFrame(
-    gm=growth, se=se, abserr=abserr, relerr=round(relerr, digits=2),
-    gtotal=gtotal, cilower=gtotal - N * abserr, ciupper=gtotal + N * abserr,
+    meanGrowth=growth, standardError=se, absoluteError=abserr, relativeError=round(relerr, digits=2),
+    totalGrowth=total, lowerLimit=total - N * abserr, upperLimit=total + N * abserr,
   )
 end
 

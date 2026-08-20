@@ -1,40 +1,33 @@
 """
 Description:
 
-ForestInventory.jl is a Julia package for forest-inventory sampling: estimating stand-level
-volume (or any other measured variable) and its confidence interval from a set of sample
-plots or points. A single entry point, [`sampling`](@ref), dispatches on a
-[`SamplingDesign`](@ref) type to select among 11 classic designs — simple
-([`SimpleCasualSampling`](@ref)), stratified ([`StratifiedSampling`](@ref)), systematic
-([`SystematicSampling`](@ref), [`MultistartSystematicSampling`](@ref)), cluster/two-stage
-([`ClusterSampling`](@ref), [`TwoStageSampling`](@ref)), horizontal point/Bitterlich
-angle-count sampling ([`HorizontalPointSampling`](@ref)), and the four
-sampling-on-successive-occasions designs used in continuous forest inventory
-([`IndependentOccasionsSampling`](@ref), [`CompleteReplacementSampling`](@ref),
-[`PartialReplacementSampling`](@ref), [`DoubleSampling`](@ref)) — every one generic to any
-number of strata/clusters/plots and returning a [`SamplingReport`](@ref) or plain
-`DataFrame`. `subtypes(SamplingDesign)` lists all 11 at once.
+ForestInventory.jl facilitates the processing of forest-inventory sampling procedures: it
+estimates a stand-level total (and its confidence interval) — volume, basal area, tree
+count, or any other measured quantity — from a set of sample plots or points, following the
+sampling designs described in Péllico Netto & Brena's *Inventário Florestal* (1997). It
+provides 11 classic designs, each its own function: simple ([`simpleCasualSampling`](@ref)),
+stratified ([`stratifiedSampling`](@ref)), systematic ([`systematicSampling`](@ref),
+[`multistartSystematicSampling`](@ref)), cluster/two-stage ([`clusterSampling`](@ref),
+[`twoStageSampling`](@ref)), horizontal point/Bitterlich angle-count sampling
+([`horizontalPointSampling`](@ref)), and the four sampling-on-successive-occasions designs
+used in continuous forest inventory ([`independentOccasionsSampling`](@ref),
+[`completeReplacementSampling`](@ref), [`partialReplacementSampling`](@ref),
+[`doubleSampling`](@ref)) — every one generic to any number of strata/clusters/plots and
+returning a [`SamplingReport`](@ref) or plain `DataFrame`.
 
 # Units of measurement
 
-Every function is built on `Unitful` quantities, so measurements carry their unit and are
-converted automatically. Diameters may be given in `cm`, `mm`, `inch`, ..., and areas/volumes
-in any compatible unit; results are normalised to a single coherent unit.
+Every function is built on `Unitful` quantities. Diameters and areas may be given in `cm`,
+`ha`, `acre`, ... or any compatible unit; plain numbers for these default to `cm`/`ha`
+respectively, matching the rest of the `JuliaForests` ecosystem. The **sampled quantity
+itself** (usually named `value`, `value1`/`value2`) is the one deliberate exception: since
+it might be volume, basal area, a tree count, or anything else being sampled, this package
+never assumes a unit for it — a `Unitful` quantity is preserved and propagated as given,
+and a plain number stays a plain, unitless number all the way through to the result table,
+rather than being silently treated as `m^3` the way it would be elsewhere in
+`JuliaForests`.
 
-For convenience every function also accepts plain numbers, in which case the package assumes
-its default units:
-
-| Measurement                  | Assumed unit |
-|:------------------------------|:-------------|
-| diameter                      | `cm`         |
-| plot/point area, total area   | `ha`         |
-| volume                        | `m^3`        |
-
-So `sampling(SimpleCasualSampling, volume, 0.05, 10)` reads `volume` as `m^3`, the plot area
-as `0.05 ha`, and the total area as `10 ha`, returning exactly the same result as the
-equivalent call with explicit units.
-
-Results always carry units; use `removeunits`/`restoreunits` from
+Results carry whatever unit the input did (or none); use `removeunits`/`restoreunits` from
 [ForestFoundations.jl](https://github.com/JuliaForests/ForestFoundations.jl) to move between
 unitful DataFrames and plain numeric ones for export.
 """
@@ -43,7 +36,6 @@ module ForestInventory
 using DataFrames, Distributions, ForestFoundations, LinearAlgebra, StatsBase
 
 include("common.jl")
-include("designs.jl")
 include("inventoryreport.jl")
 include("simplecasualsampling.jl")
 include("stratifiedsampling.jl")
@@ -58,19 +50,17 @@ include("partialreplacementsampling.jl")
 include("doublesampling.jl")
 
 export
-  sampling,
-  SamplingDesign,
-  SimpleCasualSampling,
-  StratifiedSampling,
-  SystematicSampling,
-  MultistartSystematicSampling,
-  ClusterSampling,
-  HorizontalPointSampling,
-  TwoStageSampling,
-  IndependentOccasionsSampling,
-  CompleteReplacementSampling,
-  PartialReplacementSampling,
-  DoubleSampling,
+  simpleCasualSampling,
+  stratifiedSampling,
+  systematicSampling,
+  multistartSystematicSampling,
+  clusterSampling,
+  horizontalPointSampling,
+  twoStageSampling,
+  independentOccasionsSampling,
+  completeReplacementSampling,
+  partialReplacementSampling,
+  doubleSampling,
   SamplingReport,
   resultTable,
   clusterTable,
