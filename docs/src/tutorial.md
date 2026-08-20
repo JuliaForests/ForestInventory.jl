@@ -2,15 +2,15 @@
 
 Estimate a stand's total — with its confidence interval, coefficient of variation, and
 required sample size — from any of the 11 classic sampling designs, each its own function
-taking plain vectors (no `DataFrame`/column-name indirection). Every design accepts plain
-numbers for `plot_area`/`total_area` (assumed to be `ha`), but never assumes a unit for the
-sampled quantity itself (usually named `value`): it might be volume, basal area, a tree
-count, or anything else, so a `Unitful` quantity is preserved as given and a plain number
-stays unitless all the way through. Designs that produce a single table return a plain
-`DataFrame`; designs that produce several related tables (one per stratum/cluster, or one
-per inventory occasion) return a [`SamplingReport`](@ref), whose tables are reachable
-through accessor functions (`resultTable(report)`, `clusterTable(report)`, ...) or directly
-as properties (`report.resultTable`).
+taking plain vectors. Every design accepts plain numbers for `plot_area`/`total_area`
+(assumed to be `ha`), but never assumes a unit for the sampled quantity itself (usually
+named `value`): it might be volume, basal area, a tree count, or anything else, so a
+`Unitful` quantity is preserved as given and a plain number stays unitless all the way
+through. Designs that produce a single table return a plain `DataFrame`; designs that
+produce several related tables (one per stratum/cluster, or one per inventory occasion)
+return a [`SamplingReport`](@ref), whose tables are reachable through accessor functions
+(`resultTable(report)`, `clusterTable(report)`, ...) or directly as properties
+(`report.resultTable`).
 
 The examples below walk through every design, from the simplest — simple random sampling —
 to horizontal point (Bitterlich) sampling and beyond. Most of them (every design except
@@ -39,12 +39,12 @@ anything else), the average plot area, and the number of measured plots. The opt
 keyword arguments `e` (desired relative sampling error, %) and `α` (confidence level) drive
 the required-sample-size calculation reported alongside the estimate.
 
-The 70 plot volumes below (0.1 ha plots, 45 ha stand) are Nardini's own simple-random-sampling
-exercise — our `mean`/`total` reproduce the dissertation's published 217.97 m³/ha and
-9808.71 m³ exactly:
+The 70 plot volumes below (0.1 ha plots, 45 ha stand) come from Nardini's own
+simple-random-sampling exercise — our `mean`/`total` reproduce the dissertation's
+published 217.97 m³/ha and 9808.71 m³ exactly:
 
 ```@example inv_simple
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 v = [
     18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3, 21.1, 26.3, 39.9,
@@ -72,14 +72,15 @@ given as a `Dict` keyed by the same stratum labels used in `stratum` — not a p
 ordered vector — so the plots don't need to be pre-sorted by stratum; they can be listed
 in whatever order they were collected in the field.
 
-The data below (3 strata of 7, 8, and 7 plots, 0.1 ha each) is Nardini's stratified-sampling
-exercise, again in a 45 ha stand. The dissertation's spreadsheet doesn't record each
-stratum's individual area — only the 45 ha total — so it's split evenly here (15 ha each);
-consequently the mean/total below land close to, but not exactly on, the dissertation's
-published 214.95 m³/ha / 9672.95 m³, which used the book's actual per-stratum weights:
+The data below comes from Nardini's stratified-sampling exercise (3 strata of 7, 8, and 7
+plots, 0.1 ha each, again in a 45 ha stand). The dissertation's spreadsheet doesn't record
+each stratum's individual area — only the 45 ha total — so it's split evenly here (15 ha
+each); consequently the mean/total below land close to, but not exactly on, the
+dissertation's published 214.95 m³/ha / 9672.95 m³, which used the book's actual
+per-stratum weights:
 
 ```@example inv_stratified
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 stratum = vcat(fill(1, 7), fill(2, 8), fill(3, 7))
 value = [
@@ -119,7 +120,7 @@ stand as the simple-random-sampling example above) — our `mean`/`total` reprod
 dissertation's published 221.11 m³/ha and 9949.92 m³ exactly:
 
 ```@example inv_systematic
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 line1 = [8.0, 8.6, 13.1, 16.6, 21.6, 23.6, 19.7, 30.6, 20.4, 28.0, 30.1, 22.6, 26.7, 31.8, 25.5]
 line2 = [9.4, 12.7, 7.6, 19.0, 15.1, 23.7, 18.4, 29.4, 24.6, 38.6, 27.6, 24.7, 24.8, 28.7, 33.1]
@@ -151,7 +152,7 @@ Nardini's exercise lays out 9 random starts of 8 plots each (0.25 ha, a 13000 ha
 2,588,062 m³ exactly:
 
 ```@example inv_multistart
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 start = repeat(1:9, inner=8)
 value = [
@@ -181,7 +182,7 @@ Nardini's exercise samples 25 clusters ("conglomerados") of 4 plots each (0.25 h
 and 1,027,968 m³ exactly:
 
 ```@example inv_cluster
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 cluster = repeat(1:25, inner=4)
 value = [
@@ -215,7 +216,7 @@ wasn't one of the original 10 designs — so the data below is illustrative rath
 sourced from that exercise set.
 
 ```@example inv_hps
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 point    = [1, 1, 1, 2, 2, 3, 3, 3, 3, 4, 5, 5, 5]
 diameter = [25.0, 30.0, 20.0, 28.0, 22.0, 35.0, 30.0, 25.0, 20.0, 22.0, 30.0, 28.0, 26.0]u"cm"
@@ -243,7 +244,7 @@ units each — our `mean`/`total` reproduce the dissertation's published 223.51 
 223,509,259 m³ exactly:
 
 ```@example inv_twostage
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 primary = repeat(1:36, inner=6)
 value = [
@@ -306,7 +307,7 @@ reproduces the dissertation's published 48.21 m³ exactly (the dissertation's re
 doesn't record each occasion's population size, so error/CI figures here can differ):
 
 ```@example inv_independent
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 v1 = [
     146.7, 182.1, 258.6, 198.8, 196.7, 155.6, 201.0, 183.8, 212.4, 202.5, 217.5, 138.9, 242.7,
@@ -334,7 +335,7 @@ Nardini's exercise remeasures the same 45 plots at both occasions (0.05 ha plots
 `meanGrowth` reproduces the dissertation's published 39.19 m³ exactly:
 
 ```@example inv_complete
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 v1 = [
     141.89, 147.74, 126.26, 137.08, 39.30, 133.19, 110.21, 126.79, 132.09, 73.79, 76.22, 63.42,
@@ -366,7 +367,7 @@ plots at both, and adds 13 new plots only at the second (0.05 ha plots) — our
 iterative sample-size loop:
 
 ```@example inv_partial
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 value1 = [
     141.9, 147.7, 126.3, 137.1, 133.2, 110.2, 126.8, 132.1, 73.8, 76.2, 63.4, 77.4, 98.3, 87.4,
@@ -401,7 +402,7 @@ Nardini's exercise measures 56 plots at the first occasion, only remeasuring the
 dissertation's published 49.89 m³ exactly:
 
 ```@example inv_double
-using ForestInventory, Unitful
+using ForestInventory, ForestFoundations
 
 value1 = [
     132.3, 122.9, 133.3, 124.8, 127.5, 116.4, 120.0, 140.6, 116.8, 113.9, 138.7, 144.5, 104.0,

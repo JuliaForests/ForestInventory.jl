@@ -22,20 +22,19 @@ Pkg.add("ForestInventory")
 
 ## Example Usage
 
-Every design takes plain vectors — no `DataFrame`/column-name indirection — and never
-assumes a unit for the sampled quantity itself: give it `u"m^3"`, `u"m^2/ha"`, a plain
-tree count, whatever it actually is, and that's exactly what comes back out. Only
-`plot_area`/`total_area` default to hectares when given as bare numbers, matching the
-rest of the `JuliaForests` ecosystem.
+Every design takes plain vectors and never assumes a unit for the sampled quantity
+itself: give it `u"m^3"`, `u"m^2/ha"`, a plain tree count, whatever it actually is, and
+that's exactly what comes back out. Only `plot_area`/`total_area` default to hectares
+when given as bare numbers, matching the rest of the `JuliaForests` ecosystem.
 
 Estimate a stand total from a simple random sample of plots — the reference design every
 other method in the package is compared against. The 70 plot volumes below (0.1 ha plots,
-45 ha stand) are Nardini's own simple-random-sampling exercise (see [About the
+45 ha stand) come from Nardini's own simple-random-sampling exercise (see [About the
 Authors](https://JuliaForests.github.io/ForestInventory.jl/dev/forestinventory/#About-the-Authors)) —
 this reproduces its published mean/total (217.97 m³/ha, 9808.71 m³) exactly:
 
 ```julia
-using ForestInventory
+using ForestInventory, ForestFoundations
 
 v = [
     18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3, 21.1, 26.3, 39.9,
@@ -92,29 +91,20 @@ turned it into a web platform:
 > Universidade Federal do Paraná, Curitiba.
 > [PDF](https://creaweb3.crea-pr.org.br/webcrea/biblioteca_virtual/arquivos_BV/2025/36_TCC-Renilson.pdf)
 
-This package, **ForestInventory.jl**, is a from-scratch, Julia-idiomatic reimplementation
-of that same set of 11 sampling designs — proper package structure, `Unitful` support
-throughout, a full test suite, and generated documentation — rather than a fork or a port
-of the original GUI application. I am Marcos Daniel da Silva, a Forest Engineer, and this
-reimplementation — together with the rest of the `JuliaForests` ecosystem
-([ForestMensuration.jl](https://github.com/JuliaForests/ForestMensuration.jl),
-[ForestModeling.jl](https://github.com/JuliaForests/ForestModeling.jl),
-[ForestFoundations.jl](https://github.com/JuliaForests/ForestFoundations.jl)) — is
-developed as part of my own Master's dissertation, under the guidance of Prof. Dr.
-Emanuel Araújo da Silva (advisor) and Prof. Rafaelo Balbinot (co-advisor), in the Programa
-de Pós-Graduação em Agronomia, Agricultura e Ambiente (PPGAAA) at the Universidade Federal
-de Santa Maria, Campus Frederico Westphalen (UFSM-FW):
+This package, **ForestInventory.jl**, rewrites and reinterprets that same set of 11
+sampling designs by Marcos Daniel da Silva, a Forest Engineer, integrating them into the
+`JuliaForests` ecosystem as part of his own Master's dissertation, under the guidance of
+Prof. Dr. Emanuel Araújo da Silva (advisor) and Prof. Rafaelo Balbinot (co-advisor), in
+the Programa de Pós-Graduação em Agronomia, Agricultura e Ambiente (PPGAAA) at the
+Universidade Federal de Santa Maria, Campus Frederico Westphalen (UFSM-FW):
 
 > Silva, M. D. da. *JuliaForests: da teoria à análise computacional de Florestas*.
 > Dissertação (Mestrado em Agronomia: Agricultura e Ambiente) — Universidade Federal de
 > Santa Maria, Campus Frederico Westphalen. Orientador: Prof. Dr. Emanuel Araújo da Silva;
 > coorientador: Prof. Rafaelo Balbinot.
 
-For more details, please feel free to connect with me on
-[LinkedIn](https://www.linkedin.com/in/marcosdanieldasilva/?locale=en_US) or by e-mail:
+Contact: [LinkedIn](https://www.linkedin.com/in/marcosdanieldasilva/?locale=en_US) ·
 [marcosdasilva@5a.tec.br](mailto:marcosdasilva@5a.tec.br).
-
-This package is supported and encouraged by [5A Inteligência e Engenharia](https://5a.tec.br/).
 
 ## License
 
