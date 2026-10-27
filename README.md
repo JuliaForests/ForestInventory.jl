@@ -24,15 +24,15 @@ Pkg.add("ForestInventory")
 
 Every design takes plain vectors and never assumes a unit for the sampled quantity
 itself: give it `u"m^3"`, `u"m^2/ha"`, a plain tree count, whatever it actually is, and
-that's exactly what comes back out. `plot_area`/`total_area` take any `Unitful` area
-(`ha`, `acre`, `m^2`, ...) and default to hectares when given as bare numbers, matching
-the rest of the `JuliaForests` ecosystem.
+that's exactly what comes back out. `plotarea`/`totalarea` take any `Unitful` area
+(`ha`, `acre`, `m^2`, ...); bare numbers are not accepted for them, since no unit is assumed.
 
 Estimate a stand total from a simple random sample of plots — the reference design every
 other method in the package is compared against. The 70 plot volumes below (1000 m² plots,
-a 45 ha stand) come from Nardini's own simple-random-sampling exercise (see [About the
-Authors](https://JuliaForests.github.io/ForestInventory.jl/dev/forestinventory/#About-the-Authors)) —
-this reproduces its published mean/total (217.97 m³/ha, 9808.71 m³) exactly:
+a 45 ha stand) are the worked example of chapter 5 of Péllico Netto & Brena's *Inventário
+Florestal* (1997); the package reproduces its mean (21.797 m³ per plot, 217.97 m³/ha), its
+coefficient of variation (39.58 %) and its total (9 808.71 m³). Every design of the package
+reproduces the worked example of its chapter of the book, which is also its test suite:
 
 ```julia
 using ForestInventory, ForestFoundations
@@ -45,27 +45,45 @@ v = [
     9.9, 30.7, 29.2, 28.0, 13.7, 27.6, 37.9, 27.3, 28.0, 30.7,
 ]u"m^3"
 
-simpleCasualSampling(v, 1000u"m^2", 45u"ha")
+report = simplecasualsampling(v, 1000u"m^2", 45u"ha")
+
+report.xha[1]   # mean per hectare
+# 217.9714285714286 m^3 ha^-1
+report.X[1]     # estimated total, with the limits report.Xl[1] and report.Xu[1] of its confidence interval
+# 9808.714285714286 m^3
+report.Er[1]    # relative sampling error (%)
+# 8.67
+report.nreq[1]  # plots required for the admissible error e = 10%
+# 56
 ```
 
+The columns of every table use the symbols of Péllico Netto & Brena in ASCII (`xm` for the
+mean ``ar{x}``, `cv`, `sxm`, `Ea`, `Er`, `X`, `nreq`, ...), and each docstring gives the
+complete formulas of its design, with the equation numbers of the book. A variable with no
+unit, such as a count of trees per plot, is given as plain numbers (the mean per hectare
+then comes in `ha^-1`).
+
 See the [tutorial](https://JuliaForests.github.io/ForestInventory.jl/dev/tutorial/) for
-the same treatment of the other 9 designs.
+the same treatment of the other 13 designs.
 
 ## Sampling designs
 
 | Function | Design |
 |---|---|
-| `simpleCasualSampling` | Simple random sampling |
-| `stratifiedSampling` | Stratified random sampling |
-| `systematicSampling` | Systematic sampling (method of successive differences) |
-| `multistartSystematicSampling` | Systematic sampling with multiple random starts |
-| `clusterSampling` | One-stage cluster sampling |
-| `twoStageSampling` | Two-stage sampling |
-| `horizontalPointSampling` | Horizontal point sampling (Bitterlich's angle-count method) |
-| `independentOccasionsSampling` | Successive occasions, independent samples |
-| `completeReplacementSampling` | Successive occasions, complete replacement (matched plots) |
-| `partialReplacementSampling` | Successive occasions, partial replacement |
-| `doubleSampling` | Successive occasions, double sampling with regression |
+| `simplecasualsampling` | Simple random sampling |
+| `stratifiedsampling` | Stratified random sampling |
+| `systematicsampling` | Systematic sampling (method of successive differences) |
+| `multistartsystematicsampling` | Systematic sampling with multiple random starts |
+| `clustersampling` | One-stage cluster sampling |
+| `twostagesampling` | Two-stage sampling |
+| `horizontalpointsampling` | Horizontal point sampling (Bitterlich's angle-count method) |
+| `strandsampling` | Horizontal line sampling (Strand) |
+| `prodansampling` | Prodan's k-tree distance sampling (plotless, descriptive spread only) |
+| `threepsampling` | 3P sampling (probability proportional to prediction) |
+| `independentoccasionssampling` | Successive occasions, independent samples |
+| `completereplacementsampling` | Successive occasions, complete replacement (matched plots) |
+| `partialreplacementsampling` | Successive occasions, partial replacement |
+| `doublesampling` | Successive occasions, double sampling with regression |
 
 See the [documentation](https://JuliaForests.github.io/ForestInventory.jl/dev/) for a
 full worked example of every design.
@@ -93,7 +111,7 @@ turned it into a web platform:
 > [PDF](https://creaweb3.crea-pr.org.br/webcrea/biblioteca_virtual/arquivos_BV/2025/36_TCC-Renilson.pdf)
 
 This package, **ForestInventory.jl**, rewrites and reinterprets that same set of 11
-sampling designs by Marcos Daniel da Silva, a Forest Engineer, integrating them into the
+sampling designs (and adds three more) by Marcos Daniel da Silva, a Forest Engineer, integrating them into the
 `JuliaForests` ecosystem as part of his own Master's dissertation, under the guidance of
 Prof. Dr. Emanuel Araújo da Silva (advisor) and Prof. Rafaelo Balbinot (co-advisor), in
 the Programa de Pós-Graduação em Agronomia, Agricultura e Ambiente (PPGAAA) at the

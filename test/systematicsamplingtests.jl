@@ -5,43 +5,51 @@
   # tool's repository (github.com/claitonnardini/Inventario-Florestal.jl,
   # Dados/sist.csv). Our mean/total match the dissertation's reported results (221.11
   # m^3/ha, 9949.92 m^3) exactly.
-  line1 = [8.0, 8.6, 13.1, 16.6, 21.6, 23.6, 19.7, 30.6, 20.4, 28.0, 30.1, 22.6, 26.7, 31.8, 25.5]
-  line2 = [9.4, 12.7, 7.6, 19.0, 15.1, 23.7, 18.4, 29.4, 24.6, 38.6, 27.6, 24.7, 24.8, 28.7, 33.1]
-  line3 = [7.3, 9.8, 9.5, 18.6, 15.8, 23.3, 22.8, 27.8, 19.2, 28.3, 23.1, 26.7, 26.9, 33.9, 35.1]
-  line4 = [10.1, 11.6, 8.5, 10.8, 18.0, 23.0, 27.1, 28.7, 28.2, 34.9, 28.4, 31.7, 31.8, 28.3, 30.1]
-  line5 = [8.7, 8.8, 10.4, 22.9, 16.22, 24.0, 19.5, 30.5, 19.9, 22.9, 21.4, 28.7, 21.8, 30.7, 28.3]
-  v = vcat(line1, line2, line3, line4, line5)u"m^3"
-  line = repeat(1:5, inner=15)
+  # The example of the book (chapter 7, Quadro 7.1): 75 plots of 0.1 ha in a stand of 45 ha, in 15
+  # lines (strips) of 5 plots, which the vector holds in the order of the line. The book uses
+  # t = 2.0, the package the exact t of 74 degrees of freedom (1.993).
+  v = sys_value * u"m^3"
+  line = sys_line
 
-  report = systematicSampling(v, 0.1, 45; line=line)
+  report = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line)
   @test nrow(report) == 1
 
-  @test ustrip(report.mean[1]) ≈ 22.1109 atol = 1e-3
-  @test ustrip(report.varianceOfMean[1]) ≈ 0.21084 atol = 1e-3
-  @test ustrip(report.standardError[1]) ≈ 0.459173 atol = 1e-3
-  @test report.samplingInterval[1] == 5
+  @test ustrip(report.xm[1]) ≈ 22.11 atol = 1e-2
+  @test ustrip(report.s2xm[1]) ≈ 0.1394 atol = 1e-4
+  @test ustrip(report.sxm[1]) ≈ 0.3734 atol = 1e-4
+  @test ustrip(report.Ea[1]) ≈ tq(74) * ustrip(report.sxm[1])
+  @test ustrip(report.Ea[1]) ≈ 0.7468 atol = 1e-2
+  @test report.Er[1] ≈ 3.38 atol = 2e-2
+  @test ustrip(report.X[1]) ≈ 9950 atol = 1
+  @test ustrip(report.Xl[1]) ≈ 9614 atol = 2
+  @test ustrip(report.Xu[1]) ≈ 10286 atol = 3
+  @test report.cv[1] ≈ std(sys_value) / mean(sys_value) * 100 atol = 1e-2
+  @test report.m[1] == 15
   @test report.n[1] == 75
   @test report.N[1] == 450
 
   @testset "with lines" begin
-    reportNoLine = systematicSampling(v, 0.1, 45)
-    @test reportNoLine.samplingInterval[1] == 1
+    reportNoLine = systematicsampling(v, 0.1u"ha", 45u"ha")
+    @test reportNoLine.m[1] == 1
     # the differences straddling each pair of lines are excluded, so the variance differs
     # from the single-line (no grouping) case
-    @test ustrip(reportNoLine.varianceOfMean[1]) != ustrip(report.varianceOfMean[1])
+    @test ustrip(reportNoLine.s2xm[1]) != ustrip(report.s2xm[1])
+    # a single line: the classic Σ(xi - xi+1)² / [2n(n - 1)] of the book (Eq. 7.11), with the correction 1 - f
+    d = sum(abs2, diff(sys_value))
+    @test ustrip(reportNoLine.s2xm[1]) ≈ d / (2 * 75 * 74) * (1 - 75 / 450)
   end
 
   @testset "units" begin
-    reportU = systematicSampling(v, 0.1u"ha", 45u"ha"; line=line)
+    reportU = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line)
     @test reportU == report
   end
 
   @testset "no unit assumed for a bare-number input" begin
-    reportBare = systematicSampling(ustrip.(v), 0.1, 45; line=line)
-    @test reportBare.mean[1] isa Real
-    @test !(reportBare.mean[1] isa Unitful.Quantity)
+    reportBare = systematicsampling(ustrip.(v), 0.1u"ha", 45u"ha"; line=line)
+    @test reportBare.xm[1] isa Real
+    @test !(reportBare.xm[1] isa Unitful.Quantity)
   end
 
-  @test_throws DimensionMismatch systematicSampling(v, 0.1, 45; line=[1, 2, 3])
-  @test_throws ArgumentError systematicSampling([1.0]u"m^3", 0.05, 10)
+  @test_throws DimensionMismatch systematicsampling(v, 0.1u"ha", 45u"ha"; line=[1, 2, 3])
+  @test_throws ArgumentError systematicsampling([1.0]u"m^3", 0.05u"ha", 10u"ha")
 end

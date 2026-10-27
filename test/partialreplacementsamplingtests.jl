@@ -1,50 +1,63 @@
 @testset "partialreplacementsampling" begin
-  # Partial-replacement successive-occasions exercise from Nardini (2023, PPGAAA/UFSM-FW
-  # dissertation underlying this package -- see the package docs "About the Authors"):
-  # 17 plots measured only at the first occasion, 13 matched plots remeasured at both,
-  # and 14 new plots measured only at the second (0.05 ha plots, 10000 possible plots).
-  # Raw data from the original desktop tool's repository
-  # (github.com/claitonnardini/Inventario-Florestal.jl, Dados/arp.csv). Our mean growth
-  # (44.99 m^3) is close to, but not identical to, the dissertation's reported result
-  # (44.32 m^3/ha) -- expected, since this package solves the regression-weighted
-  # estimator with its own iterative sample-size loop.
-  value1 = [
-    141.9, 147.7, 126.3, 137.1, 133.2, 110.2, 126.8, 132.1, 73.8, 76.2, 63.4, 77.4, 98.3, 87.4,
-    116.5, 83.8, 111.0,
-    77.9, 139.7, 182.1, 94.7, 181.7, 161.4, 172.6, 191.3, 137.9, 167.1, 110.1, 123.6, 107.5,
-    fill(missing, 13)...,
-  ]u"m^3"
-  value2 = [
-    fill(missing, 17)...,
-    109.0, 165.9, 208.3, 143.7, 197.5, 191.6, 266.1, 280.3, 178.4, 218.9, 149.7, 161.7, 174.5,
-    172.7, 180.0, 105.4, 126.3, 150.6, 191.5, 248.4, 183.3, 226.8, 224.3, 154.1, 142.9, 102.7,
-  ]u"m^3"
+  # The example of the book (chapter 11, Quadro 11.6): a stand of Eucalyptus sp. in Lençóis Paulista,
+  # SP, with N = 1 582 plots (volumes per hectare, so plots of 1 ha): u = 17 plots measured only in
+  # 1976, m = 13 permanent plots and n = 13 new plots measured only in 1977. The estimators are those
+  # of Ware & Cunia (1962), Eqs. 11.85 to 11.109 of the book.
+  value1 = vcat(arp_xu, arp_xm, fill(missing, 13)) * u"m^3"
+  value2 = vcat(fill(missing, 17), arp_ym, arp_yn) * u"m^3"
 
-  report = partialReplacementSampling(value1, value2, 0.05, 10000)
+  report = partialreplacementsampling(value1, value2, 1u"ha", 1582)
   @test report isa SamplingReport
-  o2 = occasion2(report)
-  chg = change(report)
 
-  @test ustrip(o2.mean[1]) ≈ 168.008 atol = 1e-3
+  # the first occasion: the 30 plots, with t = 2.045 (29 degrees of freedom)
+  o1 = occasion1(report)
+  @test ustrip(o1.xm[1]) ≈ 123.02 atol = 1e-2
+  @test ustrip(o1.sxm[1])^2 ≈ 41.28 atol = 1e-2
+  @test ustrip(o1.sxm[1]) ≈ 6.425 atol = 1e-3
+  @test ustrip(o1.Ea[1]) ≈ 13.139 atol = 5e-3
+  @test o1.Er[1] ≈ 10.68 atol = 1e-2
+  @test ustrip(o1.X[1]) ≈ 194_617 atol = 15
+
+  # the second occasion: the current mean, y = 167.92, with s = 7.568 and t = 2.06 (25 degrees of freedom)
+  o2 = occasion2(report)
+  @test o2.r[1] ≈ 0.869 atol = 1e-3
+  @test o2.c[1] ≈ 0.6362 atol = 5e-4
+  @test o2.a[1] ≈ 0.4029 atol = 5e-4
+  @test ustrip(o2.xm[1]) ≈ 167.92 atol = 2e-2
+  @test ustrip(o2.sxm[1]) ≈ 7.568 atol = 1e-2
+  @test ustrip(o2.Ea[1]) ≈ tq(25) * ustrip(o2.sxm[1])
+  @test ustrip(o2.Ea[1]) ≈ 15.590 atol = 2e-2
+  @test o2.Er[1] ≈ 9.28 atol = 2e-2
+  @test ustrip(o2.X[1]) ≈ 265_649 atol = 30
   @test o2.m[1] == 13
   @test o2.u[1] == 17
-  @test o2.v[1] == 13
-  @test 0 <= o2.regressionWeight[1] <= 1
-  @test ustrip(chg.meanGrowth[1]) ≈ 44.9851 atol = 1e-3
+  @test o2.n[1] == 13
+  @test o2.N[1] == 1582
 
-  @test_throws DimensionMismatch partialReplacementSampling(value1, value2[1:end-1], 0.05, 10000)
-  @test_throws ArgumentError partialReplacementSampling(
-    [1.0, 2.0, missing, missing]u"m^3", [missing, missing, 3.0, 4.0]u"m^3", 0.05, 200)
+  # the change, estimated directly (Eqs. 11.104 to 11.107): d = 44.32, s2d = 21.99, with
+  # (n1 - 1) + (n2 - 1) = 54 degrees of freedom
+  chg = change(report)
+  @test ustrip(chg.dm[1]) ≈ 44.32 atol = 1e-2
+  @test ustrip(chg.sdm[1])^2 ≈ 21.99 atol = 1e-2
+  @test ustrip(chg.sdm[1]) ≈ 4.689 atol = 2e-3
+  @test ustrip(chg.Ea[1]) ≈ tq(54) * ustrip(chg.sdm[1])
+  @test ustrip(chg.Ea[1]) ≈ 9.378 atol = 3e-2
+  @test chg.Er[1] ≈ 21.16 atol = 8e-2
+  @test ustrip(chg.D[1]) ≈ 70_114 atol = 10
+
+  @test_throws DimensionMismatch partialreplacementsampling(value1, value2[1:(end-1)], 1u"ha", 1582)
+  @test_throws ArgumentError partialreplacementsampling(
+    [1.0, 2.0, missing, missing]u"m^3", [missing, missing, 3.0, 4.0]u"m^3", 1u"ha", 200)
 
   @testset "units" begin
-    reportU = partialReplacementSampling(value1, value2, 0.05u"ha", 10000)
+    reportU = partialreplacementsampling(value1, value2, 1u"ha", 1582)
     @test occasion2(reportU) == o2
   end
 
   @testset "no unit assumed for a bare-number input" begin
-    reportBare = partialReplacementSampling(ustrip.(value1), ustrip.(value2), 0.05, 10000)
-    @test occasion2(reportBare).mean[1] isa Real
-    @test !(occasion2(reportBare).mean[1] isa Unitful.Quantity)
-    @test occasion2(reportBare).mean[1] ≈ 168.008 atol = 1e-3
+    reportBare = partialreplacementsampling(ustrip.(value1), ustrip.(value2), 1u"ha", 1582)
+    @test occasion2(reportBare).xm[1] isa Real
+    @test !(occasion2(reportBare).xm[1] isa Unitful.Quantity)
+    @test occasion2(reportBare).xm[1] ≈ 167.92 atol = 2e-2
   end
 end

@@ -4,12 +4,12 @@
 Wraps the set of tables produced by a multi-table forest-inventory sampling design (for
 example a per-stratum auxiliary table alongside the final result table) so they print and
 travel together instead of as a bare `Vector`/`Tuple`. Designs that only ever produce one
-table (e.g. [`simpleCasualSampling`](@ref)) return a plain `DataFrame` instead —
+table (e.g. [`simplecasualsampling`](@ref)) return a plain `DataFrame` instead —
 wrapping a single table would add nothing.
 
 # Fields
 - `tables::NamedTuple`: the report's tables, keyed by name, e.g.
-  `(anova=..., auxiliaryTable=..., resultTable=...)` for a stratified design, or
+  `(anova=..., auxiliarytable=..., resulttable=...)` for a stratified design, or
   `(occasion1=..., occasion2=..., change=...)` for a successive-occasions design.
 
 # Examples
@@ -17,9 +17,9 @@ wrapping a single table would add nothing.
 Individual tables are reachable both through `.tables` and directly as properties:
 
 ```julia-repl
-julia> report = stratifiedSampling(stratum, value, plot_area, strata_area);
-julia> report.resultTable   # shorthand for report.tables.resultTable
-julia> report.auxiliaryTable
+julia> report = stratifiedsampling(stratum, value, plotarea, strataarea);
+julia> report.resulttable   # shorthand for report.tables.resulttable
+julia> report.auxiliarytable
 ```
 """
 struct SamplingReport
@@ -37,77 +37,76 @@ function Base.show(io::IO, r::SamplingReport)
   tables = getfield(r, :tables)
   names = propertynames(tables)
   for (i, name) in enumerate(names)
-    println(io, titlecase(replace(string(name), r"(?<=[a-z])(?=[A-Z])" => " ")))
+    println(io, titlecase(replace(string(name), r"table$" => " table")))
     show(io, tables[name])
     i < length(names) && (println(io); println(io))
   end
 end
 
 """
-    resultTable(report::SamplingReport)
+    resulttable(report::SamplingReport)
 
-The final one-row, one-column-per-statistic result table — same as `report.resultTable`.
+The final one-row, one-column-per-statistic result table — same as `report.resulttable`.
 Produced by every multi-table design except the four successive-occasions designs
 (see [`occasion1`](@ref)/[`occasion2`](@ref)/[`change`](@ref) instead). The function-call
 equivalent of dot access, matching how `AllometricModel`'s own results are reached
 through functions (`coef`, `confint`, ...) rather than raw field access elsewhere in
 this ecosystem; calling it on a report that has no such table errors the same way
-`report.resultTable` already would.
+`report.resulttable` already would.
 
 # Examples
-```julia-repl
-julia> report = clusterSampling(cluster, value, plot_area, total_area);
 
-julia> resultTable(report)   # same as report.resultTable
+```julia-repl
+julia> report = clustersampling(cluster, value, plotarea, totalarea);
+
+julia> resulttable(report)   # same as report.resulttable
 ```
 """
-resultTable(r::SamplingReport) = r.resultTable
+resulttable(r::SamplingReport) = r.resulttable
 
 """
-    clusterTable(report::SamplingReport)
+    clustertable(report::SamplingReport)
 
-Per-cluster descriptive statistics (`n`, mean, variance) from [`clusterSampling`](@ref) —
-same as `report.clusterTable`.
+Per-cluster descriptive statistics from [`clustersampling`](@ref): `n` (plots), `xmi` (mean) and `s2i` (variance) of each cluster — same as `report.clustertable`.
 """
-clusterTable(r::SamplingReport) = r.clusterTable
-
-"""
-    auxiliaryTable(report::SamplingReport)
-
-Per-stratum `n`, mean, variance, and allocation weights from
-[`stratifiedSampling`](@ref) — same as `report.auxiliaryTable`.
-"""
-auxiliaryTable(r::SamplingReport) = r.auxiliaryTable
+clustertable(r::SamplingReport) = r.clustertable
 
 """
-    pointTable(report::SamplingReport)
+    auxiliarytable(report::SamplingReport)
 
-Per-point tree count, basal area/ha, and volume/ha from
-[`horizontalPointSampling`](@ref) (only points with at least one counted tree) — same
-as `report.pointTable`.
+Per-stratum statistics from [`stratifiedsampling`](@ref): `nh` (plots), `xmh` (mean), `s2h` (variance), `sh` (standard deviation) and the weights `Wh`, `Whsh` and `Whs2h` — same as `report.auxiliarytable`.
 """
-pointTable(r::SamplingReport) = r.pointTable
+auxiliarytable(r::SamplingReport) = r.auxiliarytable
 
 """
-    startTable(report::SamplingReport)
+    pointtable(report::SamplingReport)
 
-Per-start descriptive statistics from [`multistartSystematicSampling`](@ref) — same as
-`report.startTable`.
+Per-point statistics (the line of [`strandsampling`](@ref), or the point of [`prodansampling`](@ref), in the same shape): `n` (trees counted), `G` (basal area per hectare) and `xha` (value per hectare) from
+[`horizontalpointsampling`](@ref) (only points with at least one counted tree) — same
+as `report.pointtable`.
 """
-startTable(r::SamplingReport) = r.startTable
+pointtable(r::SamplingReport) = r.pointtable
 
 """
-    primaryTable(report::SamplingReport)
+    starttable(report::SamplingReport)
 
-Per-primary-unit descriptive statistics from [`twoStageSampling`](@ref) — same as
-`report.primaryTable`.
+Per-start descriptive statistics from [`multistartsystematicsampling`](@ref): `n`, `xmi` and `s2i` of each start — same as
+`report.starttable`.
 """
-primaryTable(r::SamplingReport) = r.primaryTable
+starttable(r::SamplingReport) = r.starttable
+
+"""
+    primarytable(report::SamplingReport)
+
+Per-primary-unit descriptive statistics from [`twostagesampling`](@ref): `n`, `xmi` and `s2i` of each primary unit — same as
+`report.primarytable`.
+"""
+primarytable(r::SamplingReport) = r.primarytable
 
 """
     anova(report::SamplingReport)
 
-The between/within-strata analysis-of-variance table from [`stratifiedSampling`](@ref) —
+The between/within-strata analysis-of-variance table from [`stratifiedsampling`](@ref), with `source`, `gl`, `SQ`, `QM`, `F` and `p` —
 same as `report.anova`.
 """
 anova(r::SamplingReport) = r.anova
@@ -132,6 +131,6 @@ occasion2(r::SamplingReport) = r.occasion2
     change(report::SamplingReport)
 
 The estimated growth (mean and total change) between occasions, from any of the four
-sampling-on-successive-occasions designs — same as `report.change`.
+sampling-on-successive-occasions designs, with `dm`, `sdm`, `Ea`, `Er`, `D`, `Dl` and `Du` — same as `report.change`.
 """
 change(r::SamplingReport) = r.change

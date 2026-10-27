@@ -4,112 +4,143 @@
 _isreferencearea(a::Area) = a == 1 * referencearea(a)
 
 """
-    simpleCasualSampling(value::AbstractVector, plot_area::Area, total_area::Area; e::Real=10, α::Real=0.95)
-    simpleCasualSampling(value::AbstractVector, plot_area::Real, total_area::Real; kwargs...)
+    simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::Area; e::Real=10, α::Real=0.95)
 
-Performs simple random sampling for forest inventory analysis with specified plot area and total area.
+Estimates the mean, the total and their confidence intervals of a forest by simple random sampling of fixed-area plots, and the number of plots needed for an admissible error.
 
 # Description
 
-Calculates various statistical parameters for a forest inventory using simple random
-sampling methodology. It is designed to estimate the total of some measured quantity
-(volume, basal area, tree count, ...) within a forest area by analyzing measurements from
-sample plots.
-
-Simple random sampling is a statistical method where each unit (in this case, a plot) has an equal chance of being selected. This method is commonly used in forest inventories to estimate parameters like the mean per hectare, the total, and confidence intervals.
+In simple random sampling every combination of ``n`` plots out of the ``N`` possible ones has the same chance of being the sample. The forest is treated as a single population, with no division in strata and no grouping of plots, so this is the reference design against which the others are compared: stratified, cluster, systematic and the successive-occasions designs reduce to it in their degenerate cases. The notation and the formulas follow Péllico Netto & Brena (1997), chapter 5.
 
 # Arguments
 
-- `value`: vector of measurements from each sampled plot (volume, basal area, tree count,
-  or anything else being sampled). If given as a `Unitful` quantity, its unit is preserved
-  through every reported quantity; if given as plain numbers, **no unit is assumed** and
-  every reported quantity stays a plain number too — unlike other functions in this
-  package, this design has no way to know what a bare number here represents.
-- `plot_area`: the area of each sample plot, as an `Area` quantity. All plots are assumed to have the same area. A plain number is taken to be hectares.
-- `total_area`: the total area of the forest or stand being inventoried, as an `Area` quantity. A plain number is taken to be hectares.
-- `e::Real=10`: the desired relative error margin as a percentage (default is 10%). This represents the maximum acceptable error in the estimate relative to the true mean.
-- `α::Real=0.95`: the confidence level for the statistical estimates (default is 95%). This determines the confidence interval for the total estimate.
+- `value`: the measurement of every plot (volume, basal area, number of trees, or any variable). A `Unitful` quantity keeps its unit in every result; a plain number stays a plain number, since a bare number carries no unit to assume.
+- `plotarea`: the area of each plot, an `Area`. All plots have the same area.
+- `totalarea`: the area of the whole forest, an `Area`.
+- `e::Real=10`: the admissible sampling error, in percent of the mean (``e``).
+- `α::Real=0.95`: the confidence level (``1 - \\alpha`` is the significance level of Student's ``t``).
 
 # Returns
 
-- `DataFrame`: a single-row report, one column per statistic. Every column that carries a physical unit is a real `Unitful` quantity (exactly like `dmetrics`/`standmetrics` elsewhere in this package), so `removeunits`/`restoreunits` work on it directly. Columns:
-  - `mean`: mean value per plot.
-  - `coefficientOfVariation`: coefficient of variation (%).
-  - `varianceOfMean`: variance of the mean.
-  - `standardError`: standard error of the mean.
-  - `absoluteError`: absolute sampling error.
-  - `relativeError`: relative sampling error (%).
-  - `meanPerHectare`: estimated value per hectare.
-  - `total`: estimated total.
-  - `lowerLimit`/`upperLimit`: confidence interval for the total.
-  - `population`: `"finite"` or `"infinite"`, the population classification used.
-  - `samplingFraction`: finite-population correction factor.
-  - `n`: number of measured plots.
-  - `requiredSampleSize`: required number of plots for the target error `e`.
-  - `additionalSampleSize`: additional plots still needed (`0` if `n ≥ requiredSampleSize`).
-  - `N`: number of possible plots in the population.
-  - `area`: total area.
+A one-row `DataFrame`. Every column that has a physical unit holds `Unitful` quantities, so `stripunits`/`parseunits` work on it. The columns:
+
+- `xm`: the mean per plot, ``\\bar{x}``.
+- `cv`: the coefficient of variation, ``cv`` (%).
+- `s2xm`: the variance of the mean, ``s^2_{\\bar{x}}``.
+- `sxm`: the standard error, ``s_{\\bar{x}}``.
+- `Ea`: the absolute sampling error, ``E_a``.
+- `Er`: the relative sampling error, ``E_r`` (%).
+- `xha`: the mean per hectare (per acre if imperial), ``\\bar{x}`` expanded by the expansion factor of the plot.
+- `X`: the estimated total of the forest, ``\\hat{X}``.
+- `Xl`, `Xu`: the lower and upper limits of the confidence interval of the total.
+- `population`: `"finite"` or `"infinite"`, the classification used for the variance.
+- `f`: the sampling fraction, ``f = n/N``.
+- `n`: the number of measured plots.
+- `nreq`: the number of plots required for the admissible error `e`.
+- `nadd`: the plots still to measure, ``\\max(n_{req} - n, 0)``.
+- `N`: the number of possible plots in the population.
+- `A`: the area of the forest.
 
 # Mathematical basis
 
-The mean plot value and its coefficient of variation:
+The number of possible plots is ``N = A / a``, with ``A`` the area of the forest and ``a`` the area of a plot, and the sampling fraction is ``f = n/N``. From the ``n`` measured values ``x_i``, the mean, the variance and the coefficient of variation (Eqs. 5.3, 5.5 and 5.14):
+
 ```math
-\\bar{x} = \\frac{\\sum_{i=1}^{n} x_i}{n} \\qquad CV = \\frac{s}{\\bar{x}} \\times 100
+\\bar{x} = \\frac{\\sum_{i=1}^{n} x_i}{n} \\qquad
+s_x^2 = \\frac{\\sum_{i=1}^{n} (x_i - \\bar{x})^2}{n - 1} \\qquad
+cv = \\frac{s_x}{\\bar{x}} \\times 100
 ```
 
-For an infinite population, the variance of the mean is `s²/n`; for a finite population of
-size `N = \\text{total\\_area}/\\text{plot\\_area}`, a finite-population correction `f = 1 - n/N` is applied:
+The variance of the mean has the finite-population correction ``(1 - f)`` (Eqs. 5.9 and 5.10), which is dropped for an infinite population:
+
 ```math
-s^2_{\\bar{x}} = \\frac{s^2}{n} \\qquad \\text{or} \\qquad s^2_{\\bar{x}} = \\frac{s^2}{n}\\left(1 - \\frac{n}{N}\\right)
+s_{\\bar{x}}^2 = \\frac{s_x^2}{n} (1 - f) \\quad \\text{(finite)} \\qquad
+s_{\\bar{x}}^2 = \\frac{s_x^2}{n} \\quad \\text{(infinite)} \\qquad
+s_{\\bar{x}} = \\sqrt{s_{\\bar{x}}^2}
 ```
 
-The required sample size for the desired error `e` is solved iteratively (see `_requiredsamplesize`), since the t quantile depends on the sample size through its own degrees of freedom.
+The population is taken as infinite when ``1 - f \\ge 0.98`` (Sec. 5.4) or when the plot is a full reference area (1 ha, or 1 ac). The sampling errors use Student's ``t`` with ``n - 1`` degrees of freedom (Eqs. 5.19 and 5.20), and the mean per hectare uses the expansion factor ``F`` of the plot (``F = 1\\,\\text{ha} / a``):
+
+```math
+E_a = t \\, s_{\\bar{x}} \\qquad E_r = \\frac{t \\, s_{\\bar{x}}}{\\bar{x}} \\times 100 \\qquad
+x_{ha} = \\bar{x} F
+```
+
+The total of the population and its confidence interval (Eqs. 5.27 and 5.28):
+
+```math
+\\hat{X} = N \\bar{x} \\qquad
+IC\\left[\\hat{X} - N t s_{\\bar{x}} \\le X \\le \\hat{X} + N t s_{\\bar{x}}\\right] = P
+```
+
+The sampling intensity for the admissible error ``E = (e/100)\\bar{x}``, written with the coefficient of variation in percent (Eqs. 5.40 and 5.42):
+
+```math
+n_{req} = \\frac{t^2 \\, cv^2}{e^2 + t^2 \\, cv^2 / N} \\quad \\text{(finite)} \\qquad
+n_{req} = \\frac{t^2 \\, cv^2}{e^2} \\quad \\text{(infinite)}
+```
+
+The value of ``t`` depends on ``n_{req} - 1`` degrees of freedom, so the pair is solved iteratively until ``n_{req}`` stops changing (Sec. 5.4.3), and the result is rounded up.
 
 # Technical description
 
-Simple random sampling is the reference design against which every other sampling method
-in this module is compared: stratified, cluster, and systematic sampling all reduce to it
-in the degenerate case of a single stratum/cluster/full census. The population is
-classified as infinite whenever the sampling fraction is negligible (`f ≥ 0.98`) or the
-plot occupies a full reference area (1 ha or 1 ac), in which case the finite-population
-correction is dropped from the variance of the mean.
+With a single stratum, a single plot per cluster or a full census, every other design of this package gives the numbers of this function. The values are the plots, so the unit of the results is the unit of `value`, and the variance of the mean carries its square. A variable with no physical unit, such as the number of trees of each plot, is given as plain numbers: the mean per hectare comes in ``ha^{-1}``, trees per hectare, and the total is the number of trees.
 
 # Examples
 
+The example of the book (chapter 5): a population of 450 plots of 0.1 ha (45 ha) of *Pinus* sp., sampled with the 70 plots of Quadro 5.2, in m³ per plot.
+
 ```julia-repl
-julia> v = [381.7, 458.9, 468.2, 531.7, 474.1, 401.9, 469.1, 437.4, 435.3, 403.2, 397.1]u"m^3";
+julia> v = [ 18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3, 21.1, 26.3, 39.9, 12.7,
+        11.5, 11.0, 18.9, 31.4, 9.6, 9.8, 7.1, 25.9, 25.7, 24.2, 19.0, 25.9, 37.7, 23.3, 24.6,
+        32.3, 23.4, 17.1, 8.9, 32.7, 8.1, 29.2, 24.7, 25.6, 13.2, 25.7, 27.0, 20.4, 13.6, 32.4,
+        31.3, 34.6, 9.5, 18.7, 28.9, 21.6, 8.3, 23.2, 26.6, 25.6, 8.0, 22.1, 21.9, 23.3, 9.9,
+        30.7, 29.2, 28.0, 13.7, 27.6, 37.9, 27.3, 28.0, 30.7]u"m^3";
 
-julia> report = simpleCasualSampling(v, 0.05, 10; e=10, α=0.95)
+julia> report = simplecasualsampling(v, 0.1u"ha", 45u"ha"; e=10, α=0.95)
 1×17 DataFrame
- Row │ mean        coefficientOfVariation  varianceOfMean  standardError  absoluteError  relativeError  meanPerHectare  total       lowerLimit  upperLimit  population  samplingFraction  n      requiredSampleSize  additionalSampleSize  N      area
-     │ Quantity…   Float64                 Quantity…       Quantity…      Quantity…      Float64        Quantity…       Quantity…   Quantity…   Quantity…   String      Float64           Int64  Int64                Int64                  Int64  Quantity…
-─────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-   1 │ 441.691 m^3                   10.03     168.498 m^6    12.9807 m^3    28.9227 m^3           6.55  8833.82 m^3 ha^-1  88338.2 m^3  82553.6 m^3  94122.7 m^3  finite                 0.945     11                   7                      0    200  10 ha
+ Row │ xm           cv       s2xm          sxm           Ea           Er       xha                X            Xl          Xu           population  f        n      nreq   nadd   N      A
+     │ Quantity…    Float64  Quantity…     Quantity…     Quantity…    Float64  Quantity…          Quantity…    Quantity…   Quantity…    String      Float64  Int64  Int64  Int64  Int64  Quantity…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ 21.7971 m^3    39.58  0.897789 m^6  0.947518 m^3  1.89025 m^3     8.67  217.971 m^3 ha^-1  9808.71 m^3  8958.1 m^3  10659.3 m^3  finite        0.156     70     56      0    450      45 ha
 
-julia> report.mean
-441.6909090909091 m^3
+julia> report.xm[1]
+21.79714285714286 m^3
 ```
+
+The book gets ``\\bar{x} = 21.797`` m³, ``cv = 39.58`` %, ``s_{\\bar{x}} = 0.947`` m³ and ``\\hat{X} = 9\\,808.71`` m³. It takes the tabulated ``t = 1.99`` for 69 degrees of freedom (``E_r = 8.65`` %), while the package uses the exact ``t = 1.995`` (``E_r = 8.67`` %). The pilot inventory of the book, the first 20 plots of Quadro 5.1 (mean 19.605 m³, ``cv = 45.64`` %), requires for ``e = 10`` the 70 plots of the definitive inventory:
+
+```julia-repl
+julia> pilot = [18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3, 21.1, 26.3, 39.9, 12.7,
+        11.5, 11.0, 18.9, 31.4]u"m^3";
+
+julia> simplecasualsampling(pilot, 0.1u"ha", 45u"ha").nreq[1]
+70
+```
+
+# References
+Péllico Netto, S. & Brena, D. A. (1997). *Inventário Florestal*. Curitiba, chapter 5.
 """
-function simpleCasualSampling(value::AbstractVector, plot_area::Area, total_area::Area;
+function simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::Area;
   e::Real=10, α::Real=0.95)
 
   n = length(value)
   n > 1 || throw(ArgumentError("At least two sampled plots are required."))
 
-  N = round(Int, ustrip(uconvert(NoUnits, total_area / plot_area)))
+  N = round(Int, ustrip(uconvert(NoUnits, totalarea / plotarea)))
   f = 1 - n / N
-  x̅ = mean(value)
-  cv = std(value) / x̅ * 100
+  x̅, s² = mean_and_var(value)
+  cv = sqrt(s²) / x̅ * 100
   Ttab = -quantile(TDist(n - 1), (1 - α) / 2)
 
-  infinite = _isinfinitepopulation(n, N) || _isreferencearea(plot_area)
+  infinite = _isinfinitepopulation(n, N) || _isreferencearea(plotarea)
   if infinite
     population = "infinite"
-    s²x̅ = var(value) / n
+    s²x̅ = s² / n
     requiredplots = _requiredsamplesize(cv^2, n, e, α)
   else
     population = "finite"
-    s²x̅ = (var(value) / n) * f
+    s²x̅ = (s² / n) * f
     requiredplots = _requiredsamplesize(cv^2, n, e, α, N)
   end
   sx̅ = sqrt(s²x̅)
@@ -117,19 +148,16 @@ function simpleCasualSampling(value::AbstractVector, plot_area::Area, total_area
 
   absoluteerror = Ttab * sx̅
   relativeerror = absoluteerror / x̅ * 100
-  hectarevalue = x̅ / uconvert(referencearea(plot_area), plot_area)
+  hectarevalue = x̅ * expansionfactor(plotarea)
   totalvalue = x̅ * N
   ciupper = totalvalue + N * absoluteerror
   cilower = totalvalue - N * absoluteerror
 
   return DataFrame(
-    mean=x̅, coefficientOfVariation=round(cv, digits=2), varianceOfMean=s²x̅, standardError=sx̅,
-    absoluteError=absoluteerror, relativeError=round(relativeerror, digits=2), meanPerHectare=hectarevalue,
-    total=totalvalue, lowerLimit=cilower, upperLimit=ciupper, population=population,
-    samplingFraction=round(f, digits=3), n=n, requiredSampleSize=requiredplots,
-    additionalSampleSize=missingplots, N=N, area=total_area,
+    xm=x̅, cv=round(cv, digits=2), s2xm=s²x̅, sxm=sx̅,
+    Ea=absoluteerror, Er=round(relativeerror, digits=2), xha=hectarevalue,
+    X=totalvalue, Xl=cilower, Xu=ciupper, population=population,
+    f=round(n / N, digits=3), n=n, nreq=requiredplots,
+    nadd=missingplots, N=N, A=totalarea,
   )
 end
-
-simpleCasualSampling(value::AbstractVector, plot_area::Real, total_area::Real; kwargs...) =
-  simpleCasualSampling(value, plot_area * AUNIT, total_area * AUNIT; kwargs...)

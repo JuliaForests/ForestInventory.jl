@@ -6,60 +6,43 @@
   # original desktop tool's repository
   # (github.com/claitonnardini/Inventario-Florestal.jl, Dados/de.csv). Our mean/total
   # match the dissertation's reported results (223.51 m^3/ha, 223509259 m^3) exactly.
-  primary = repeat(1:36, inner=6)
-  value = [
-    29.07, 72.37, 96.03, 55.90, 106.91, 54.51,
-    113.55, 53.14, 63.08, 125.64, 113.10, 27.21,
-    37.26, 58.57, 40.27, 58.81, 57.30, 72.97,
-    52.66, 58.97, 37.86, 74.61, 69.56, 70.67,
-    60.81, 37.76, 63.43, 75.40, 46.24, 44.19,
-    72.98, 65.00, 94.62, 55.52, 57.81, 48.97,
-    120.71, 73.83, 108.75, 47.76, 101.33, 98.52,
-    62.48, 70.30, 41.59, 49.85, 65.64, 65.05,
-    73.35, 38.46, 138.26, 106.78, 154.13, 145.69,
-    56.35, 19.51, 20.25, 23.54, 38.34, 25.06,
-    73.65, 51.87, 62.15, 43.96, 30.82, 41.77,
-    65.58, 36.48, 38.76, 26.37, 83.33, 47.14,
-    34.31, 29.64, 30.69, 23.87, 23.63, 37.50,
-    45.98, 50.52, 44.55, 72.07, 42.39, 86.99,
-    55.58, 67.72, 44.15, 107.90, 51.05, 101.61,
-    26.79, 27.88, 69.14, 36.53, 41.43, 55.25,
-    52.11, 47.06, 80.57, 20.37, 166.67, 118.35,
-    44.40, 117.04, 82.26, 130.69, 123.53, 131.59,
-    41.48, 90.94, 60.43, 47.60, 58.71, 44.05,
-    59.69, 65.41, 72.89, 55.52, 41.42, 76.90,
-    50.27, 52.25, 31.06, 79.50, 88.10, 60.19,
-    62.24, 27.18, 69.97, 72.08, 60.97, 46.94,
-    36.71, 31.28, 34.94, 37.25, 64.99, 40.83,
-    63.36, 26.13, 25.89, 33.80, 25.12, 60.89,
-    43.08, 41.36, 30.66, 32.78, 28.10, 30.42,
-    38.29, 37.51, 29.58, 62.67, 56.40, 73.09,
-    32.34, 57.92, 89.36, 16.09, 52.05, 54.40,
-    75.36, 59.68, 36.97, 22.02, 40.25, 69.87,
-    53.63, 21.01, 46.76, 84.00, 88.49, 45.35,
-    48.85, 45.06, 30.19, 30.51, 27.35, 48.72,
-    21.05, 79.97, 20.08, 62.15, 16.20, 56.69,
-    29.13, 27.72, 35.92, 80.50, 98.08, 25.65,
-    24.77, 20.32, 62.24, 27.18, 69.97, 72.08,
-    47.21, 43.56, 25.74, 23.53, 28.29, 50.16,
-    43.11, 40.80, 53.10, 28.08, 54.64, 19.82,
-    40.25, 33.02, 32.24, 23.87, 64.41, 18.85,
-  ]u"m^3"
+  # The example of the book (chapter 8): the stand of 1 000 000 ha has N = 100 primary units of
+  # 10 000 ha, each with M = 40 000 plots of 0.25 ha. The pilot of Quadro 8.2 has 18 primary units
+  # of 6 plots, and the definitive inventory of Quadro 8.3 has 36 (the first 18 are the pilot).
+  primary = two_primary
+  value = two_value * u"m^3"
 
-  report = twoStageSampling(primary, value, 0.25, 100, 40000)
+  @testset "the pilot inventory of the book" begin
+    pilot = resulttable(twostagesampling(primary[1:108], value[1:108], 0.25u"ha", 100, 40000))
+    @test ustrip(pilot.xm[1]) ≈ 64.740 atol = 1e-3
+    @test ustrip(pilot.s2d[1]) ≈ 697.231 atol = 1e-3    # MQd
+    @test ustrip(pilot.s2e[1]) ≈ 389.505 atol = 1e-3
+    @test pilot.nreq[1] == 36    # the book: 37.996 → 35.876 → 36.004 primary units
+  end
+
+  report = twostagesampling(primary, value, 0.25u"ha", 100, 40000)
   @test report isa SamplingReport
-  rt = resultTable(report)
+  rt = resulttable(report)
 
-  @test ustrip(rt.mean[1]) ≈ 55.8773 atol = 1e-3
+  # In the book MQe is printed as 2 218.968, but its own means give 2 193.009, so its s2e (280.555),
+  # s2xm (7.467) and s_xm (2.733) are slightly off; the package gives the ones of the book's data.
+  @test ustrip(rt.xm[1]) ≈ 55.877 atol = 1e-3
+  @test ustrip(rt.s2d[1]) ≈ 535.637 atol = 1e-3
+  @test ustrip(rt.s2e[1]) ≈ 276.228 atol = 1e-3
+  @test ustrip(rt.s2xm[1]) ≈ 7.3905 atol = 1e-3
+  @test ustrip(rt.sxm[1]) ≈ 2.7186 atol = 1e-3
+  @test ustrip(rt.Ea[1]) ≈ tq(35) * ustrip(rt.sxm[1])
+  @test ustrip(rt.X[1]) ≈ 223_508_000 rtol = 1e-4
   @test rt.m[1] == 6
   @test rt.M[1] == 40000
   @test rt.n[1] == 36
   @test rt.N[1] == 100
+  @test nrow(primarytable(report)) == 36
 
   @testset "units" begin
-    reportU = twoStageSampling(primary, value, 0.25u"ha", 100, 40000)
-    @test resultTable(reportU) == rt
+    reportU = twostagesampling(primary, value, 0.25u"ha", 100, 40000)
+    @test resulttable(reportU) == rt
   end
 
-  @test_throws ArgumentError twoStageSampling(primary, value, 0.02, 40, 2)
+  @test_throws ArgumentError twostagesampling(primary, value, 0.02u"ha", 40, 2)
 end

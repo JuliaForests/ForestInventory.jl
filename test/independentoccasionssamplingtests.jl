@@ -1,46 +1,55 @@
 @testset "independentoccasionssampling" begin
-  # Independent-samples successive-occasions exercise from Nardini (2023, PPGAAA/UFSM-FW
-  # dissertation underlying this package -- see the package docs "About the Authors"): 44
-  # plots at each occasion (0.05 ha plots, 30000 possible plots per occasion). Raw data
-  # from the original desktop tool's repository
-  # (github.com/claitonnardini/Inventario-Florestal.jl, Dados/ind.csv). Our mean growth
-  # matches the dissertation's reported result (48.21 m^3) exactly; the error/CI figures
-  # can differ since the dissertation's population sizes for each occasion aren't
-  # recorded in its result sheet.
-  v1 = [
-    146.7, 182.1, 258.6, 198.8, 196.7, 155.6, 201.0, 183.8, 212.4, 202.5, 217.5, 138.9, 242.7,
-    200.0, 208.3, 193.0, 279.3, 181.0, 223.4, 210.4, 206.1, 171.2, 264.4, 278.6, 253.3, 41.0,
-    242.9, 241.6, 251.2, 144.5, 225.9, 178.5, 182.0, 176.2, 199.5, 156.8, 136.2, 225.4, 184.3,
-    245.8, 164.9, 198.8, 168.6, 228.7,
-  ]u"m^3"
-  v2 = [
-    330.4, 222.3, 300.2, 293.8, 270.2, 230.4, 312.3, 341.6, 326.5, 46.3, 312.8, 273.8, 272.3,
-    225.2, 282.9, 233.3, 213.4, 224.2, 229.1, 188.0, 176.7, 221.0, 247.5, 249.5, 230.3, 136.4,
-    285.4, 265.9, 248.1, 250.2, 238.0, 265.9, 210.6, 280.0, 198.2, 290.3, 248.2, 235.1, 265.2,
-    236.7, 280.4, 285.4, 198.3, 248.0,
-  ]u"m^3"
+  # The example of the book (chapter 11, Quadro 11.1): Pinus elliottii in Guarapuava, PR, with 44
+  # independent plots in 1975 and 44 in 1976, in a population of N = 1 500 units. The volumes of the
+  # book are per hectare, so they are the volumes of units of 1 ha. The book takes t = 2.021 for
+  # each occasion and t = 1.99 for the change, the package the exact ones (2.017 and 1.988).
+  v1 = ai_x * u"m^3"
+  v2 = ai_y * u"m^3"
 
-  report = independentOccasionsSampling(v1, v2, 0.05, 30000, 30000)
+  report = independentoccasionssampling(v1, v2, 1u"ha", 1500, 1500)
   @test report isa SamplingReport
+
+  o1 = occasion1(report)
+  @test ustrip(o1.xm[1]) ≈ 199.98 atol = 1e-2
+  @test ustrip(o1.sxm[1]) ≈ 6.598 atol = 1e-3
+  @test ustrip(o1.Ea[1]) ≈ tq(43) * ustrip(o1.sxm[1])
+  @test ustrip(o1.Ea[1]) ≈ 13.335 atol = 5e-2
+  @test o1.Er[1] ≈ 6.67 atol = 5e-2
+  @test ustrip(o1.X[1]) ≈ 299_970 atol = 20
+  @test ustrip(o1.Xl[1]) ≈ 279_968 atol = 50
+  @test o1.n[1] == 44
+  @test o1.N[1] == 1500
+
+  o2 = occasion2(report)
+  @test ustrip(o2.xm[1]) ≈ 248.19 atol = 1e-2
+  @test ustrip(o2.sxm[1]) ≈ 7.809 atol = 1e-3
+  @test ustrip(o2.Ea[1]) ≈ 15.782 atol = 5e-2
+  @test o2.Er[1] ≈ 6.36 atol = 5e-2
+  @test ustrip(o2.X[1]) ≈ 372_285 atol = 20
+  @test o2.n[1] == 44
+
+  # the change: the variance is the sum of the variances of the means (Eq. 11.23), and the
+  # degrees of freedom of t are (n1 - 1) + (n2 - 1) = 86 (Eq. 11.27)
   chg = change(report)
-
-  @test ustrip(chg.meanGrowth[1]) ≈ 48.2091 atol = 1e-3
-  @test ustrip(chg.standardError[1]) ≈ 10.3695 atol = 1e-3
-  @test ustrip(chg.totalGrowth[1]) ≈ 1.44627e6 atol = 1e1
-
-  @test ustrip(occasion1(report).mean[1]) ≈ mean(ustrip.(v1)) atol = 1e-9
-  @test ustrip(occasion2(report).mean[1]) ≈ mean(ustrip.(v2)) atol = 1e-9
-  @test occasion1(report).n[1] == 44
-  @test occasion2(report).n[1] == 44
+  @test ustrip(chg.dm[1]) ≈ 48.21 atol = 1e-2
+  @test ustrip(chg.sdm[1]) ≈ 10.22 atol = 1e-2
+  @test ustrip(chg.sdm[1])^2 ≈ 104.53 atol = 1e-2
+  @test ustrip(chg.Ea[1]) ≈ tq(86) * ustrip(chg.sdm[1])
+  @test ustrip(chg.Ea[1]) ≈ 20.34 atol = 5e-2
+  @test chg.Er[1] ≈ 42.19 atol = 5e-2
+  @test ustrip(chg.D[1]) ≈ 72_315 atol = 5
+  @test ustrip(chg.Dl[1]) ≈ 41_808 atol = 50
+  @test ustrip(chg.Du[1]) ≈ 102_821 atol = 50
 
   @testset "units" begin
-    reportU = independentOccasionsSampling(v1, v2, 0.05u"ha", 30000, 30000)
+    reportU = independentoccasionssampling(v1, v2, 1u"ha", 1500, 1500)
     @test change(reportU) == chg
   end
 
   @testset "no unit assumed for a bare-number input" begin
-    reportBare = independentOccasionsSampling(ustrip.(v1), ustrip.(v2), 0.05, 30000, 30000)
-    @test change(reportBare).meanGrowth[1] isa Real
-    @test !(change(reportBare).meanGrowth[1] isa Unitful.Quantity)
+    reportBare = independentoccasionssampling(ai_x, ai_y, 1u"ha", 1500, 1500)
+    @test change(reportBare).dm[1] isa Real
+    @test !(change(reportBare).dm[1] isa Unitful.Quantity)
+    @test change(reportBare).dm[1] ≈ 48.21 atol = 1e-2
   end
 end
