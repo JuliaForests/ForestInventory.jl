@@ -1,8 +1,3 @@
-# A plot occupying a full reference area (1 ha in the metric system, 1 ac in the
-# imperial one) is treated as effectively infinite regardless of the sampling fraction,
-# matching the convention used by the original tool this design was ported from.
-_isreferencearea(a::Area) = a == 1 * referencearea(a)
-
 """
     simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::Area; e::Real=10, α::Real=0.95)
 
@@ -59,7 +54,7 @@ s_{\\bar{x}}^2 = \\frac{s_x^2}{n} \\quad \\text{(infinite)} \\qquad
 s_{\\bar{x}} = \\sqrt{s_{\\bar{x}}^2}
 ```
 
-The population is taken as infinite when ``1 - f \\ge 0.98`` (Sec. 5.4) or when the plot is a full reference area (1 ha, or 1 ac). The sampling errors use Student's ``t`` with ``n - 1`` degrees of freedom (Eqs. 5.19 and 5.20), and the mean per hectare uses the expansion factor ``F`` of the plot (``F = 1\\,\\text{ha} / a``):
+The population is taken as infinite when ``1 - f \\ge 0.98`` (Sec. 5.4). The sampling errors use Student's ``t`` with ``n - 1`` degrees of freedom (Eqs. 5.19 and 5.20), and the mean per hectare uses the expansion factor ``F`` of the plot (``F = 1\\,\\text{ha} / a``):
 
 ```math
 E_a = t \\, s_{\\bar{x}} \\qquad E_r = \\frac{t \\, s_{\\bar{x}}}{\\bar{x}} \\times 100 \\qquad
@@ -133,7 +128,7 @@ function simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::
   cv = sqrt(s²) / x̅ * 100
   Ttab = -quantile(TDist(n - 1), (1 - α) / 2)
 
-  infinite = _isinfinitepopulation(n, N) || _isreferencearea(plotarea)
+  infinite = _isinfinitepopulation(n, N)
   if infinite
     population = "infinite"
     s²x̅ = s² / n

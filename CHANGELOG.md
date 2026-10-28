@@ -2,6 +2,13 @@
 
 ### Breaking Changes
 
+- **`simplecasualsampling`: the population is infinite only by the sampling fraction**,
+  ``1 - f \ge 0.98`` (Péllico Netto & Brena, 1997, Sec. 5.4), as in the other designs. A plot of
+  exactly 1 ha (or 1 ac) is no longer taken as an infinite population whatever the sampling
+  fraction, a rule that was not in the book: with such plots and ``1 - f < 0.98`` the variance of
+  the mean now has the finite-population correction (results change).
+- **ForestFoundations is re-exported**: `using ForestInventory` gives the units (`@u_str`,
+  `ustrip`, `uconvert`, ...) and the helpers of ForestFoundations.
 - **No underscores in public names.** The keywords and arguments `plot_area`, `total_area`,
   `strata_area` and `point_area` are now `plotarea`, `totalarea`, `strataarea` and `pointarea`.
 - **Arguments are never uppercase.** The population sizes `N`, `M`, `N1` and `N2` of `twostagesampling`,

@@ -78,8 +78,12 @@
     @test rt.X[1] ≈ 5380    # trees in the 10 ha
   end
 
-  @testset "infinite population via 1-reference-area plot" begin
-    reportInf = simplecasualsampling(v, 1.0u"ha", 1000u"ha")
+  @testset "the population is infinite only by the sampling fraction" begin
+    # 70 plots of 1 ha in 1000 ha: 1 - f = 0.93 < 0.98, finite, whatever the size of the plot
+    reportFin = simplecasualsampling(v, 1.0u"ha", 1000u"ha")
+    @test reportFin.population[1] == "finite"
+    # 70 plots in 10 000 ha: 1 - f = 0.993 >= 0.98, infinite
+    reportInf = simplecasualsampling(v, 1.0u"ha", 10000u"ha")
     @test reportInf.population[1] == "infinite"
   end
 
