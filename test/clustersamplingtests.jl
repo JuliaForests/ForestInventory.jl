@@ -44,7 +44,7 @@
   @testset "M=1 matches simplecasualsampling" begin
     v = [381.7, 458.9, 468.2, 531.7, 474.1, 401.9, 469.1, 437.4, 435.3, 403.2, 397.1]u"m^3"
     rc = resulttable(clustersampling(1:11, v, 0.05u"ha", 10u"ha"))
-    rs = simplecasualsampling(v, 0.05u"ha", 10u"ha")
+    rs = simplecasualsampling(v, 0.05u"ha", 10u"ha").resulttable
     @test ustrip(rc.xm[1]) ≈ ustrip(rs.xm[1]) atol = 1e-6
     @test rc.nreq[1] == rs.nreq[1]
     @test rc.r[1] ≈ 1.0 atol = 1e-9

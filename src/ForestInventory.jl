@@ -13,7 +13,7 @@ stratified ([`stratifiedsampling`](@ref)), systematic ([`systematicsampling`](@r
 used in continuous forest inventory ([`independentoccasionssampling`](@ref),
 [`completereplacementsampling`](@ref), [`partialreplacementsampling`](@ref),
 [`doublesampling`](@ref)) — every one generic to any number of strata/clusters/plots and
-returning a [`SamplingReport`](@ref) or plain `DataFrame`. Three more designs, due to Strand, Prodan, and Grosenbaugh rather than Péllico Netto &
+returning a [`SamplingReport`](@ref). Three more designs, due to Strand, Prodan, and Grosenbaugh rather than Péllico Netto &
 Brena, round out the package: horizontal line sampling ([`strandsampling`](@ref),
 Strand, 1957) is a proper PPS design like [`horizontalpointsampling`](@ref) and gets the
 same full confidence-interval treatment; Prodan's k-tree nearest-neighbor sampling

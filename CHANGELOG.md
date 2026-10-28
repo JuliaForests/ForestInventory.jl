@@ -2,6 +2,14 @@
 
 ### Breaking Changes
 
+- **Every design returns a `SamplingReport`.** `simplecasualsampling`, `systematicsampling` and
+  `threepsampling` returned a bare `DataFrame`; they now return a `SamplingReport` with
+  `resulttable`, as the other designs, so every result is read the same way:
+  `report.resulttable.xm` (or `resulttable(report).xm`) instead of `report.xm`.
+- **`longtable(report)`**: the result table (or `longtable(report, :auxiliarytable)`, ... any
+  other table of the report) in the vertical layout of the reports, the columns `variable`,
+  `unit` and `value` (a value column per row in tables of many rows). The native layout stays a
+  column per statistic.
 - **`simplecasualsampling`: the population is infinite only by the sampling fraction**,
   ``1 - f \ge 0.98`` (Péllico Netto & Brena, 1997, Sec. 5.4), as in the other designs. A plot of
   exactly 1 ha (or 1 ac) is no longer taken as an infinite population whatever the sampling

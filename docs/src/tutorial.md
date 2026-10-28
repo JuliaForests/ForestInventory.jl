@@ -6,9 +6,8 @@ taking plain vectors. Every design accepts `plotarea`/`totalarea` as a `Unitful`
 (`ha`, `acre`, `m^2`, ...); a plain number is not accepted for them. This never extends to the sampled quantity itself (usually named `value`): it might
 be volume, basal area, a biomass, a tree count, or anything else, so a `Unitful` quantity is preserved
 as given and a plain number stays unitless all the way through: a count of trees has no physical unit, and the
-mean per hectare of plain numbers comes in `ha^-1`, trees per hectare. Designs that produce a single table return a plain `DataFrame`; designs that
-produce several related tables (one per stratum/cluster, or one per inventory occasion)
-return a [`SamplingReport`](@ref), whose tables are reachable through accessor functions
+mean per hectare of plain numbers comes in `ha^-1`, trees per hectare. Every design returns a [`SamplingReport`](@ref): the result table and, when the design
+produces them, the related tables (one per stratum/cluster, or one per inventory occasion). The tables are reachable through accessor functions
 (`resulttable(report)`, `clustertable(report)`, ...) or directly as properties
 (`report.resulttable`).
 
@@ -67,6 +66,14 @@ needed to reach the admissible error `e` at confidence level `α`. The book's pi
 ```@example inv_simple
 pilot = v[1:20]
 simplecasualsampling(pilot, 0.1u"ha", 45u"ha")
+```
+
+The result table has a column per statistic, which suits putting many inventories together
+(`vcat`) and exporting with `stripunits`. For the vertical layout of the reports, a row per
+statistic with its unit apart from the value, use `longtable`:
+
+```@example inv_simple
+longtable(simplecasualsampling(v, 0.1u"ha", 45u"ha"))
 ```
 
 A variable with no unit, such as the number of trees of each plot, is given as plain numbers; the mean per

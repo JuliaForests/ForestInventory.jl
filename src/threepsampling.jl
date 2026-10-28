@@ -19,7 +19,7 @@ This function does not do the selection in the field, which cannot be replaced b
 
 # Returns
 
-A one-row `DataFrame` with:
+A [`SamplingReport`](@ref) with `resulttable`, a one-row `DataFrame` with:
 
 - `X`: the bias-corrected total of the population, ``\\hat{X} = K \\bar{R}``.
 - `xha`: the total per hectare, ``\\hat{X} / A``.
@@ -72,13 +72,13 @@ julia> measured  = [missing, 0.48u"m^3", missing, 0.58u"m^3", missing,
 
 julia> report = threepsampling(predicted, measured, 5u"ha");
 
-julia> report.X[1]
+julia> report.resulttable.X[1]
 3.9480113636363634 m^3
 
-julia> report.Rm[1]   # the measured trees were on average 5.3% above their prediction
+julia> report.resulttable.Rm[1]   # the measured trees were on average 5.3% above their prediction
 1.0528030303030302
 
-julia> report.n[1], report.N[1]   # 4 of the 10 trees were selected for measurement
+julia> report.resulttable.n[1], report.resulttable.N[1]   # 4 of the 10 trees were selected for measurement
 (4, 10)
 ```
 
@@ -115,7 +115,7 @@ function threepsampling(predicted::AbstractVector, measured::AbstractVector, tot
   abserr = Ttab * se
   relerr = abserr / total * 100
 
-  DataFrame(
+  resulttable = DataFrame(
     X=total, xha=total / totalarea,
     Rm=R̄, K=K,
     cv=round(cv, digits=2), sxm=se,
@@ -125,4 +125,5 @@ function threepsampling(predicted::AbstractVector, measured::AbstractVector, tot
     n=n, N=N, nreq=requiredn, nadd=missingn,
     A=totalarea,
   )
+  return SamplingReport((; resulttable))
 end

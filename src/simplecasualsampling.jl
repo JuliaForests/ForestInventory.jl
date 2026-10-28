@@ -17,7 +17,7 @@ In simple random sampling every combination of ``n`` plots out of the ``N`` poss
 
 # Returns
 
-A one-row `DataFrame`. Every column that has a physical unit holds `Unitful` quantities, so `stripunits`/`parseunits` work on it. The columns:
+A [`SamplingReport`](@ref) with `resulttable`, a one-row `DataFrame`. Every column that has a physical unit holds `Unitful` quantities, so `stripunits`/`parseunits` work on it. The columns:
 
 - `xm`: the mean per plot, ``\\bar{x}``.
 - `cv`: the coefficient of variation, ``cv`` (%).
@@ -93,13 +93,14 @@ julia> v = [ 18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3
         30.7, 29.2, 28.0, 13.7, 27.6, 37.9, 27.3, 28.0, 30.7]u"m^3";
 
 julia> report = simplecasualsampling(v, 0.1u"ha", 45u"ha"; e=10, α=0.95)
+Result Table
 1×17 DataFrame
  Row │ xm           cv       s2xm          sxm           Ea           Er       xha                X            Xl          Xu           population  f        n      nreq   nadd   N      A
      │ Quantity…    Float64  Quantity…     Quantity…     Quantity…    Float64  Quantity…          Quantity…    Quantity…   Quantity…    String      Float64  Int64  Int64  Int64  Int64  Quantity…
 ─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
    1 │ 21.7971 m^3    39.58  0.897789 m^6  0.947518 m^3  1.89025 m^3     8.67  217.971 m^3 ha^-1  9808.71 m^3  8958.1 m^3  10659.3 m^3  finite        0.156     70     56      0    450      45 ha
 
-julia> report.xm[1]
+julia> report.resulttable.xm[1]
 21.79714285714286 m^3
 ```
 
@@ -109,7 +110,7 @@ The book gets ``\\bar{x} = 21.797`` m³, ``cv = 39.58`` %, ``s_{\\bar{x}} = 0.94
 julia> pilot = [18.5, 22.8, 15.8, 9.8, 23.5, 20.7, 28.3, 6.9, 28.7, 26.4, 7.6, 10.3, 21.1, 26.3, 39.9, 12.7,
         11.5, 11.0, 18.9, 31.4]u"m^3";
 
-julia> simplecasualsampling(pilot, 0.1u"ha", 45u"ha").nreq[1]
+julia> simplecasualsampling(pilot, 0.1u"ha", 45u"ha").resulttable.nreq[1]
 70
 ```
 
@@ -148,11 +149,12 @@ function simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::
   ciupper = totalvalue + N * absoluteerror
   cilower = totalvalue - N * absoluteerror
 
-  return DataFrame(
+  resulttable = DataFrame(
     xm=x̅, cv=round(cv, digits=2), s2xm=s²x̅, sxm=sx̅,
     Ea=absoluteerror, Er=round(relativeerror, digits=2), xha=hectarevalue,
     X=totalvalue, Xl=cilower, Xu=ciupper, population=population,
     f=round(n / N, digits=3), n=n, nreq=requiredplots,
     nadd=missingplots, N=N, A=totalarea,
   )
+  return SamplingReport((; resulttable))
 end

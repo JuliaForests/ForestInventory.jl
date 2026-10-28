@@ -5,7 +5,9 @@
   # the exact one (1.995), so the errors and the limits differ in the third digit.
   v = srs_def * u"m^3"
 
-  report = simplecasualsampling(v, 0.1u"ha", 45u"ha"; e=10, α=0.95)
+  @test simplecasualsampling(v, 0.1u"ha", 45u"ha") isa SamplingReport
+
+  report = simplecasualsampling(v, 0.1u"ha", 45u"ha"; e=10, α=0.95).resulttable
   @test report isa DataFrame
   @test nrow(report) == 1
 
@@ -29,7 +31,7 @@
 
   @testset "the pilot inventory of the book" begin
     # 20 plots: mean 19.605, cv 45.64%, and the required number of plots of the book, 70
-    pilot = simplecasualsampling(srs_pilot * u"m^3", 0.1u"ha", 45u"ha"; e=10, α=0.95)
+    pilot = simplecasualsampling(srs_pilot * u"m^3", 0.1u"ha", 45u"ha"; e=10, α=0.95).resulttable
     @test ustrip(pilot.xm[1]) ≈ 19.605 atol = 1e-3
     @test pilot.cv[1] ≈ 45.64 atol = 1e-2
     @test pilot.nreq[1] == 70
@@ -49,18 +51,18 @@
   @test restored.xm == report.xm
 
   @testset "units are propagated, never assumed" begin
-    reportU = simplecasualsampling(v, 0.1u"ha", 45u"ha")
+    reportU = simplecasualsampling(v, 0.1u"ha", 45u"ha").resulttable
     @test reportU == report
 
     vft = ustrip.(v) * u"ft^3"
-    reportFt = simplecasualsampling(vft, 0.1u"ac", 45u"ac")
+    reportFt = simplecasualsampling(vft, 0.1u"ac", 45u"ac").resulttable
     @test unit(reportFt.xm[1]) == u"ft^3"
     @test unit(reportFt.xha[1]) == u"ft^3/ac"
   end
 
   @testset "no unit assumed for a bare-number input" begin
     vbare = ustrip.(v)
-    reportBare = simplecasualsampling(vbare, 0.1u"ha", 45u"ha"; e=10, α=0.95)
+    reportBare = simplecasualsampling(vbare, 0.1u"ha", 45u"ha"; e=10, α=0.95).resulttable
     @test !(eltype(reportBare.xm) <: Unitful.Quantity)
     @test eltype(reportBare.xm) <: Real
     @test reportBare.xm[1] ≈ 21.797 atol = 1e-3
@@ -71,7 +73,7 @@
   @testset "a count of trees, with no unit, is per hectare" begin
     # the number of trees of each plot has no physical unit: the mean per hectare is in 1/ha
     trees = [23, 31, 27, 19, 35, 28, 30, 25, 22, 29]
-    rt = simplecasualsampling(trees, 0.05u"ha", 10u"ha")
+    rt = simplecasualsampling(trees, 0.05u"ha", 10u"ha").resulttable
     @test rt.xm[1] ≈ 26.9
     @test unit(rt.xha[1]) == u"ha^-1"
     @test ustrip(rt.xha[1]) ≈ 538
@@ -80,11 +82,22 @@
 
   @testset "the population is infinite only by the sampling fraction" begin
     # 70 plots of 1 ha in 1000 ha: 1 - f = 0.93 < 0.98, finite, whatever the size of the plot
-    reportFin = simplecasualsampling(v, 1.0u"ha", 1000u"ha")
+    reportFin = simplecasualsampling(v, 1.0u"ha", 1000u"ha").resulttable
     @test reportFin.population[1] == "finite"
     # 70 plots in 10 000 ha: 1 - f = 0.993 >= 0.98, infinite
-    reportInf = simplecasualsampling(v, 1.0u"ha", 10000u"ha")
+    reportInf = simplecasualsampling(v, 1.0u"ha", 10000u"ha").resulttable
     @test reportInf.population[1] == "infinite"
+  end
+
+  @testset "the report in the vertical layout" begin
+    full = simplecasualsampling(v, 0.1u"ha", 45u"ha"; e=10, α=0.95)
+    vertical = longtable(full)
+    @test names(vertical) == ["variable", "unit", "value"]
+    @test vertical.variable == names(report)
+    @test vertical.value[1] ≈ ustrip(report.xm[1])
+    @test vertical.unit[1] == "m^3"
+    @test vertical == longtable(full, :resulttable)
+    @test_throws ArgumentError longtable(full, :change)
   end
 
   @test_throws ArgumentError simplecasualsampling([1.0]u"m^3", 0.05u"ha", 10u"ha")

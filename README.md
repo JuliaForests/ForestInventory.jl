@@ -47,13 +47,13 @@ v = [
 
 report = simplecasualsampling(v, 1000u"m^2", 45u"ha")
 
-report.xha[1]   # mean per hectare
+report.resulttable.xha[1]   # mean per hectare
 # 217.9714285714286 m^3 ha^-1
-report.X[1]     # estimated total, with the limits report.Xl[1] and report.Xu[1] of its confidence interval
+report.resulttable.X[1]     # estimated total, with the limits Xl and Xu of its confidence interval
 # 9808.714285714286 m^3
-report.Er[1]    # relative sampling error (%)
+report.resulttable.Er[1]    # relative sampling error (%)
 # 8.67
-report.nreq[1]  # plots required for the admissible error e = 10%
+report.resulttable.nreq[1]  # plots required for the admissible error e = 10%
 # 56
 ```
 

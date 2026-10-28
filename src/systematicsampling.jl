@@ -29,7 +29,7 @@ In systematic sampling the plots are laid out at a fixed interval along one or m
 
 # Returns
 
-A one-row `DataFrame` with the columns of [`simplecasualsampling`](@ref) (`xm`, `cv`, `s2xm`, `sxm`, `Ea`, `Er`, `xha`, `X`, `Xl`, `Xu`, `population`, `f`, `n`, `N`, `A`), with these differences:
+A [`SamplingReport`](@ref) with `resulttable`, a one-row `DataFrame` with the columns of [`simplecasualsampling`](@ref) (`xm`, `cv`, `s2xm`, `sxm`, `Ea`, `Er`, `xha`, `X`, `Xl`, `Xu`, `population`, `f`, `n`, `N`, `A`), with these differences:
 
 - `cv` is the coefficient of variation of the plots, ``s/\\bar{x} \\times 100``, from their sample variance, since the method of the differences estimates only the variance of the mean;
 - `e`: the admissible error, repeated for the comparison with `Er`;
@@ -83,13 +83,13 @@ julia> v = vec(permutedims(rows)) * u"m^3";
 julia> line = repeat(1:15, inner=5);
 
 julia> report = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line)
-julia> report.xm[1]
+julia> report.resulttable.xm[1]
 22.110666666666667 m^3
 
-julia> report.s2xm[1]
+julia> report.resulttable.s2xm[1]
 0.13944814814814818 m^6
 
-julia> report.Er[1]
+julia> report.resulttable.Er[1]
 3.37
 ```
 
@@ -126,10 +126,11 @@ function systematicsampling(value::AbstractVector, plotarea::Area, totalarea::Ar
   ciupper = totalvalue + N * absoluteerror
   cilower = totalvalue - N * absoluteerror
 
-  return DataFrame(
+  resulttable = DataFrame(
     xm=x̅, cv=round(cv, digits=2), s2xm=s²x̅, sxm=sx̅,
     Ea=absoluteerror, Er=round(relativeerror, digits=2), e=e,
     xha=hectarevalue, X=totalvalue, Xl=cilower, Xu=ciupper,
     population=population, f=round(n / N, digits=3), m=k, n=n, N=N, A=totalarea,
   )
+  return SamplingReport((; resulttable))
 end

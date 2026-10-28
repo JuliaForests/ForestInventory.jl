@@ -1,11 +1,9 @@
 """
     SamplingReport
 
-Wraps the set of tables produced by a multi-table forest-inventory sampling design (for
-example a per-stratum auxiliary table alongside the final result table) so they print and
-travel together instead of as a bare `Vector`/`Tuple`. Designs that only ever produce one
-table (e.g. [`simplecasualsampling`](@ref)) return a plain `DataFrame` instead —
-wrapping a single table would add nothing.
+The result of every forest-inventory sampling design: its tables (the final result table
+and, when the design produces them, the auxiliary tables, for example one per stratum) print
+and travel together, and every design is read the same way, `report.resulttable`.
 
 # Fields
 - `tables::NamedTuple`: the report's tables, keyed by name, e.g.
@@ -63,6 +61,31 @@ julia> resulttable(report)   # same as report.resulttable
 ```
 """
 resulttable(r::SamplingReport) = r.resulttable
+
+"""
+    longtable(report::SamplingReport, table::Symbol=:resulttable)
+
+A table of the report in the vertical layout of the reports, a row per variable with its
+name, its unit and its value ([`longtable`](@ref) of ForestFoundations). By default the
+result table; `table` names another one, e.g. `:auxiliarytable`, or `:occasion1`,
+`:occasion2` and `:change` in the successive-occasions designs.
+
+# Examples
+
+```julia-repl
+julia> report = simplecasualsampling(v, 0.1u"ha", 45u"ha");
+
+julia> longtable(report)              # the result table, a row per variable
+
+julia> longtable(report, :change)     # another table of the report
+```
+"""
+function ForestFoundations.longtable(r::SamplingReport, table::Symbol=:resulttable)
+  tables = getfield(r, :tables)
+  haskey(tables, table) ||
+    throw(ArgumentError("The report has no table $table; its tables are $(join(keys(tables), ", "))."))
+  return longtable(tables[table])
+end
 
 """
     clustertable(report::SamplingReport)

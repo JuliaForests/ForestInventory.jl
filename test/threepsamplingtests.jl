@@ -6,7 +6,9 @@
   measured[6] = 0.63u"m^3"
   measured[10] = 0.52u"m^3"
 
-  rt = threepsampling(predicted, measured, 5u"ha")
+  @test threepsampling(predicted, measured, 5u"ha") isa SamplingReport
+
+  rt = threepsampling(predicted, measured, 5u"ha").resulttable
   @test rt isa DataFrame
   @test rt.n[1] == 4
   @test rt.N[1] == 10
@@ -33,7 +35,7 @@
 
   @testset "order of rows does not matter" begin
     perm = [10, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    rtPerm = threepsampling(predicted[perm], measured[perm], 5u"ha")
+    rtPerm = threepsampling(predicted[perm], measured[perm], 5u"ha").resulttable
     @test rtPerm == rt
   end
 
@@ -41,7 +43,7 @@
     predictedBare = ustrip.(predicted)
     measuredBare = Vector{Union{Missing,Float64}}(missing, 10)
     measuredBare[[2, 4, 6, 10]] = ustrip.(skipmissing(measured))
-    rtBare = threepsampling(predictedBare, measuredBare, 5u"ha")
+    rtBare = threepsampling(predictedBare, measuredBare, 5u"ha").resulttable
     @test rtBare.X[1] ≈ ustrip(rt.X[1]) atol = 1e-9
   end
 
@@ -52,7 +54,7 @@
     predictedPerfect = fill(1.0, 10) .* u"m^3"
     measuredPerfect = Vector{Union{Missing,typeof(1.0u"m^3")}}(missing, 10)
     measuredPerfect[[1, 3, 5, 7]] .= 1.0u"m^3"
-    rtPerfect = threepsampling(predictedPerfect, measuredPerfect, 5u"ha")
+    rtPerfect = threepsampling(predictedPerfect, measuredPerfect, 5u"ha").resulttable
     @test rtPerfect.nreq[1] >= 2
   end
 

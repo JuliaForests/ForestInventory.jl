@@ -32,6 +32,9 @@
 
   aux = auxiliarytable(report)
   @test nrow(aux) == 3
+  # the per-stratum table in the vertical layout, a value column per stratum
+  @test names(longtable(report, :auxiliarytable))[1:2] == ["variable", "unit"]
+  @test ncol(longtable(report, :auxiliarytable)) == 2 + nrow(aux)
   @test aux.nh == [7, 8, 7]
   @test ustrip(aux.xmh) ≈ [12.029, 24.563, 27.457] atol = 1e-3
   @test ustrip(aux.s2h) ≈ [10.462, 17.483, 30.823] atol = 1e-3
@@ -74,7 +77,7 @@
     v = [381.7, 458.9, 468.2, 531.7, 474.1, 401.9, 469.1, 437.4, 435.3, 403.2, 397.1]u"m^3"
     stratum1 = fill(1, 11)
     r1 = resulttable(stratifiedsampling(stratum1, v, 0.05u"ha", Dict(1 => 10.0u"ha")))
-    r2 = simplecasualsampling(v, 0.05u"ha", 10u"ha")
+    r2 = simplecasualsampling(v, 0.05u"ha", 10u"ha").resulttable
     @test ustrip(r1.xm[1]) ≈ ustrip(r2.xm[1]) atol = 1e-6
     @test ustrip(r1.s2xm[1]) ≈ ustrip(r2.s2xm[1]) atol = 1e-6
     @test ustrip(r1.sxm[1]) ≈ ustrip(r2.sxm[1]) atol = 1e-6

@@ -11,7 +11,9 @@
   v = sys_value * u"m^3"
   line = sys_line
 
-  report = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line)
+  @test systematicsampling(v, 0.1u"ha", 45u"ha"; line=line) isa SamplingReport
+
+  report = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line).resulttable
   @test nrow(report) == 1
 
   @test ustrip(report.xm[1]) ≈ 22.11 atol = 1e-2
@@ -29,7 +31,7 @@
   @test report.N[1] == 450
 
   @testset "with lines" begin
-    reportNoLine = systematicsampling(v, 0.1u"ha", 45u"ha")
+    reportNoLine = systematicsampling(v, 0.1u"ha", 45u"ha").resulttable
     @test reportNoLine.m[1] == 1
     # the differences straddling each pair of lines are excluded, so the variance differs
     # from the single-line (no grouping) case
@@ -40,12 +42,12 @@
   end
 
   @testset "units" begin
-    reportU = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line)
+    reportU = systematicsampling(v, 0.1u"ha", 45u"ha"; line=line).resulttable
     @test reportU == report
   end
 
   @testset "no unit assumed for a bare-number input" begin
-    reportBare = systematicsampling(ustrip.(v), 0.1u"ha", 45u"ha"; line=line)
+    reportBare = systematicsampling(ustrip.(v), 0.1u"ha", 45u"ha"; line=line).resulttable
     @test reportBare.xm[1] isa Real
     @test !(reportBare.xm[1] isa Unitful.Quantity)
   end
