@@ -163,7 +163,7 @@ Cochran, W. G. (1977). *Sampling Techniques*, 3rd ed. New York: Wiley, Eq. 10.4.
 function twostagesampling(primary::AbstractVector, value::AbstractVector, plotarea::Area, npop::Integer, mpop::Integer;
   e::Real=10, α::Real=0.95)
 
-  length(primary) == length(value) || throw(DimensionMismatch("primary and value must have the same length."))
+  checklengths(:primary => primary, :value => value)
 
   table = _clustertable(primary, value; groupname=:primary)
   m = _equalclustersize(table.n)

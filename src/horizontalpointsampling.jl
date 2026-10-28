@@ -130,12 +130,11 @@ Husch, B., Beers, T. W. & Kershaw, J. A. (2003). *Forest Mensuration*, 4th ed. W
 function horizontalpointsampling(point::AbstractVector, diameter::AbstractVector{<:Length}, value::AbstractVector, baf::Quantity,
   npoints::Integer, pointarea::Area, totalarea::Area; e::Real=10, α::Real=0.95)
 
-  length(point) == length(diameter) == length(value) ||
-    throw(DimensionMismatch("point, diameter, and value must have the same length."))
+  checklengths(:point => point, :diameter => diameter, :value => value)
   ustrip(baf) > 0 || throw(ArgumentError("baf must be a positive value."))
 
   d = diameter
-  g = basalarea.(d)
+  g = sectionalarea.(d)
   bafunit = unit(g[1]) / referencearea(unit(d[1]))
   bafQ = uconvert(bafunit, baf)
   ef = bafQ ./ g
@@ -153,7 +152,7 @@ function horizontalpointsampling(point::AbstractVector, diameter::AbstractVector
   valueperha = nzero == 0 ? pointtable.xha : vcat(pointtable.xha, fill(0.0, nzero) .* unit(pointtable.xha[1]))
   basalareaperha = nzero == 0 ? pointtable.G : vcat(pointtable.G, fill(0.0, nzero) .* unit(pointtable.G[1]))
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / pointarea)))
+  N = round(Int, NoUnits(totalarea / pointarea))
   f = 1 - n / N
   x̅, s² = mean_and_var(valueperha)
   cv = sqrt(s²) / x̅ * 100

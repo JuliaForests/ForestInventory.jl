@@ -127,7 +127,7 @@ function simplecasualsampling(value::AbstractVector, plotarea::Area, totalarea::
   n = length(value)
   n > 1 || throw(ArgumentError("At least two sampled plots are required."))
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / plotarea)))
+  N = round(Int, NoUnits(totalarea / plotarea))
   f = 1 - n / N
   x̅, s² = mean_and_var(value)
   cv = sqrt(s²) / x̅ * 100

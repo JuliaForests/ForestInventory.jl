@@ -129,13 +129,13 @@ Shiue, C. J. (1960). Systematic sampling with multiple random starts. *Forest Sc
 function multistartsystematicsampling(start::AbstractVector, value::AbstractVector, plotarea::Area, totalarea::Area;
   e::Real=10, α::Real=0.95)
 
-  length(start) == length(value) || throw(DimensionMismatch("start and value must have the same length."))
+  checklengths(:start => start, :value => value)
 
   table = _clustertable(start, value; groupname=:start)
   M = _equalclustersize(table.n)
   n = nrow(table)
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / (plotarea * M))))
+  N = round(Int, NoUnits(totalarea / (plotarea * M)))
   x̅ = mean(table.xmi)
   vunit = unit(x̅)
   v2unit = vunit^2

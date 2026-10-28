@@ -200,7 +200,7 @@ Satterthwaite, F. E. (1946). An approximate distribution of estimates of varianc
 function stratifiedsampling(stratum::AbstractVector, value::AbstractVector, plotarea::Area,
   strataarea::AbstractDict{<:Any,<:Area}; allocation::Symbol=:proportional, e::Real=10, α::Real=0.95)
 
-  length(stratum) == length(value) || throw(DimensionMismatch("stratum and value must have the same length."))
+  checklengths(:stratum => stratum, :value => value)
   allocation in (:proportional, :neyman) || throw(ArgumentError("allocation must be :proportional or :neyman."))
 
   areas = _resolvestrataareas(stratum, strataarea)
@@ -208,7 +208,7 @@ function stratifiedsampling(stratum::AbstractVector, value::AbstractVector, plot
   all(>=(2), table.nh) || throw(ArgumentError("Every stratum needs at least two plots to estimate its variance."))
   anova = _anova(value, table)
 
-  N = round(Int, ustrip(uconvert(NoUnits, sum(areas) / plotarea)))
+  N = round(Int, NoUnits(sum(areas) / plotarea))
   measured = table.nh
   n = sum(measured)
   infinite = _isinfinitepopulation(n, N)
@@ -236,7 +236,7 @@ function stratifiedsampling(stratum::AbstractVector, value::AbstractVector, plot
 
   # the degrees of freedom of Student's t are the effective ones of Satterthwaite (Eq. 6.26),
   # rounded up to the next integer as in the book
-  Nh = ustrip.(uconvert.(NoUnits, areas ./ plotarea))
+  Nh = NoUnits.(areas ./ plotarea)
   gh = Nh .* (Nh .- measured) ./ measured
   dfeff = ceil(Int, sum(gh .* ustrip.(table.s2h))^2 / sum((gh .^ 2 .* ustrip.(table.s2h) .^ 2) ./ (measured .- 1)))
   Ttab = -quantile(TDist(dfeff), (1 - α) / 2)

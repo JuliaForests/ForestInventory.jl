@@ -104,9 +104,9 @@ function systematicsampling(value::AbstractVector, plotarea::Area, totalarea::Ar
 
   n = length(value)
   n > 1 || throw(ArgumentError("At least two sampled plots are required."))
-  isnothing(line) || length(line) == n || throw(DimensionMismatch("line must have the same length as value."))
+  checklengths(:line => line, :value => value)
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / plotarea)))
+  N = round(Int, NoUnits(totalarea / plotarea))
   k = isnothing(line) ? 1 : length(unique(line))
   x̅ = mean(value)
   diffs = _successivedifferences(value, line)

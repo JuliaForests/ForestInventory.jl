@@ -90,7 +90,7 @@ Cochran, W. G. (1977). *Sampling Techniques*, 3rd ed. New York: Wiley, Sec. 12.9
 """
 function doublesampling(value1::AbstractVector, value2::AbstractVector, plotarea::Area, npop::Integer; α::Real=0.95)
 
-  length(value1) == length(value2) || throw(DimensionMismatch("value1 and value2 must have the same length."))
+  checklengths(:value1 => value1, :value2 => value2)
   permanentidx = findall(!ismissing, value2)
   m = length(permanentidx)
   n = length(value1)

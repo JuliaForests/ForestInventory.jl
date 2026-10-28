@@ -129,7 +129,7 @@ end
 # only ever needs the slope of a single predictor, used as the regression coefficient in
 # the double-sampling and partial-replacement estimators.
 function _olsslope(y::AbstractVector{<:Real}, x::AbstractVector{<:Real})
-  length(y) == length(x) || throw(DimensionMismatch("y and x must have the same length."))
+  checklengths(:y => y, :x => x)
   X = [ones(length(x)) x]
   β = X'y
   chol = cholesky!(Symmetric(X'X))

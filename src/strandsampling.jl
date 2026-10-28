@@ -121,15 +121,14 @@ Kershaw, J. A., Ducey, M. J., Beers, T. W. & Husch, B. (2017). *Forest Mensurati
 function strandsampling(line::AbstractVector, diameter::AbstractVector{<:Length}, value::AbstractVector, baf::Quantity, linelength::Length,
   nlines::Integer, totalarea::Area; e::Real=10, α::Real=0.95)
 
-  length(line) == length(diameter) == length(value) ||
-    throw(DimensionMismatch("line, diameter, and value must have the same length."))
+  checklengths(:line => line, :diameter => diameter, :value => value)
   ustrip(baf) > 0 || throw(ArgumentError("baf must be a positive value."))
 
-  d = ustrip.(uconvert.(u"cm", diameter))
-  L = ustrip(uconvert(u"m", linelength))
-  g = basalarea.(diameter)
+  d = ustrip.(u"cm", diameter)
+  L = ustrip(u"m", linelength)
+  g = sectionalarea.(diameter)
 
-  k = sqrt(ustrip(uconvert(u"m^2/ha", baf)) / 2500)
+  k = sqrt(ustrip(u"m^2/ha", baf) / 2500)
   tf = (500_000k ./ (d .* L)) .* u"ha^-1"
 
   linetable = _linetable(line, tf, g, value)
@@ -145,7 +144,7 @@ function strandsampling(line::AbstractVector, diameter::AbstractVector{<:Length}
   valueperha = nzero == 0 ? linetable.xha : vcat(linetable.xha, fill(0.0, nzero) .* unit(linetable.xha[1]))
   basalareaperha = nzero == 0 ? linetable.G : vcat(linetable.G, fill(0.0, nzero) .* unit(linetable.G[1]))
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / 1u"ha")))
+  N = round(Int, NoUnits(totalarea / 1u"ha"))
   f = 1 - n / N
   x̅, s² = mean_and_var(valueperha)
   cv = sqrt(s²) / x̅ * 100

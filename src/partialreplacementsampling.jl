@@ -105,7 +105,7 @@ Ware, K. D. & Cunia, T. (1962). *Continuous forest inventory with partial replac
 """
 function partialreplacementsampling(value1::AbstractVector, value2::AbstractVector, plotarea::Area, npop::Integer; α::Real=0.95)
 
-  length(value1) == length(value2) || throw(DimensionMismatch("value1 and value2 must have the same length."))
+  checklengths(:value1 => value1, :value2 => value2)
 
   idx = eachindex(value1)
   matched = findall(i -> !ismissing(value1[i]) && !ismissing(value2[i]), idx)

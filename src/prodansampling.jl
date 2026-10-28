@@ -15,18 +15,16 @@ function _prodanpointtable(point::AbstractVector, g::AbstractVector{<:Area}, val
   return combine(grouped) do df
     ordered = sort(df, :distance)
     L = ordered.distance[end]
-    # dividing by the plot's circular area directly in its reference area (ha or ac,
-    # picked from L's own unit system) turns every quantity below into a per-hectare
-    # (or per-acre) rate for free, the same trick `_pointtable` (horizontalpointsampling.jl)
-    # relies on via `expansionfactor`.
-    circlearea = uconvert(referencearea(unit(L)), π * abs2(L))
+    # the expansion factor of the plot's circular area (in ha^-1 or ac^-1, picked from L's
+    # own unit system) turns every quantity below into a per-hectare (or per-acre) rate
+    ef = expansionfactor(π * abs2(L))
     weight = fill(1.0, k)
     weight[end] = 0.5
     (
       k=k, L=L,
-      N=(k - 0.5) / circlearea,
-      G=sum(weight .* ordered.g) / circlearea,
-      xha=sum(weight .* ordered.value) / circlearea,
+      N=(k - 0.5) * ef,
+      G=sum(weight .* ordered.g) * ef,
+      xha=sum(weight .* ordered.value) * ef,
     )
   end
 end
@@ -121,12 +119,11 @@ Prodan, M. (1968). Punkt-Stichproben für die Forsteinrichtung. *Der Forst- und 
 Kershaw, J. A., Ducey, M. J., Beers, T. W. & Husch, B. (2017). *Forest Mensuration*, 5th ed. Wiley.
 """
 function prodansampling(point::AbstractVector, diameter::AbstractVector{<:Length}, value::AbstractVector, distance::AbstractVector{<:Length}, totalarea::Area)
-  length(point) == length(diameter) == length(value) == length(distance) ||
-    throw(DimensionMismatch("point, diameter, value, and distance must have the same length."))
+  checklengths(:point => point, :diameter => diameter, :value => value, :distance => distance)
 
   d = diameter
   L = distance
-  g = basalarea.(d)
+  g = sectionalarea.(d)
 
   pointtable = _prodanpointtable(point, g, value, L)
   n = nrow(pointtable)

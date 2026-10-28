@@ -166,13 +166,13 @@ Cochran, W. G. (1977). *Sampling Techniques*, 3rd ed. New York: Wiley.
 function clustersampling(cluster::AbstractVector, value::AbstractVector, plotarea::Area, totalarea::Area;
   e::Real=10, α::Real=0.95)
 
-  length(cluster) == length(value) || throw(DimensionMismatch("cluster and value must have the same length."))
+  checklengths(:cluster => cluster, :value => value)
 
   table = _clustertable(cluster, value; groupname=:cluster)
   M = _equalclustersize(table.n)
   n = nrow(table)
 
-  N = round(Int, ustrip(uconvert(NoUnits, totalarea / (plotarea * M))))
+  N = round(Int, NoUnits(totalarea / (plotarea * M)))
   x̅ = mean(table.xmi)
   vunit = unit(x̅)
   v2unit = vunit^2

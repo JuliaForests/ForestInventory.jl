@@ -88,7 +88,7 @@ Grosenbaugh, L. R. (1967). The gains from sample-tree selection with unequal pro
 Rennie, J. C. (1979). Point-3P sampling. *Forest Science*, 25(3), 441-447.
 """
 function threepsampling(predicted::AbstractVector, measured::AbstractVector, totalarea::Area; e::Real=10, α::Real=0.95)
-  length(predicted) == length(measured) || throw(DimensionMismatch("predicted and measured must have the same length."))
+  checklengths(:predicted => predicted, :measured => measured)
 
   measuredidx = findall(!ismissing, measured)
   n = length(measuredidx)
