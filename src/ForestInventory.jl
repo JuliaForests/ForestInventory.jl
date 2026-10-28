@@ -63,7 +63,11 @@ unitful DataFrames and plain numeric ones for export.
 """
 module ForestInventory
 
-using DataFrames, Distributions, ForestFoundations, LinearAlgebra, StatsBase
+using DataFrames, Distributions, LinearAlgebra, Reexport, StatsBase
+
+# the units (`@u_str`, `ustrip`, `uconvert`, ...) and the helpers of ForestFoundations, so
+# `using ForestInventory` is enough to write quantities
+@reexport using ForestFoundations
 
 include("common.jl")
 include("inventoryreport.jl")
